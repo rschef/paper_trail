@@ -6,6 +6,7 @@ defmodule PaperTrailTest do
   alias PaperTrail.Version
   alias SimpleCompany, as: Company
   alias SimplePerson, as: Person
+  alias PaperTrail.Serializer
 
   @repo PaperTrail.RepoClient.repo()
   @create_company_params %{name: "Acme LLC", is_active: true, city: "Greenwich"}
@@ -14,6 +15,8 @@ defmodule PaperTrailTest do
     website: "http://www.acme.com",
     facebook: "acme.llc"
   }
+
+  defdelegate serialize(data), to: Serializer
 
   doctest PaperTrail
 
@@ -536,10 +539,5 @@ defmodule PaperTrailTest do
 
   defp update_company_with_version(company, params \\ @update_company_params, options \\ nil) do
     Company.changeset(company, params) |> PaperTrail.update(options)
-  end
-
-  defp serialize(model) do
-    relationships = model.__struct__.__schema__(:associations)
-    Map.drop(model, [:__struct__, :__meta__] ++ relationships)
   end
 end
