@@ -62,7 +62,8 @@ defmodule PaperTrailTest.SimpleModeBangFunctions do
              address: nil,
              facebook: nil,
              twitter: nil,
-             founded_in: nil
+             founded_in: nil,
+             location: nil
            }
 
     assert Map.drop(version, [:id, :inserted_at]) == %{
@@ -112,7 +113,8 @@ defmodule PaperTrailTest.SimpleModeBangFunctions do
              address: nil,
              facebook: "acme.llc",
              twitter: nil,
-             founded_in: nil
+             founded_in: nil,
+             location: nil
            }
 
     assert Map.drop(version, [:id, :inserted_at]) == %{
@@ -161,7 +163,8 @@ defmodule PaperTrailTest.SimpleModeBangFunctions do
              address: nil,
              facebook: "acme.llc",
              twitter: nil,
-             founded_in: nil
+             founded_in: nil,
+             location: nil
            }
 
     assert Map.drop(version, [:id, :inserted_at]) == %{
@@ -219,7 +222,8 @@ defmodule PaperTrailTest.SimpleModeBangFunctions do
              address: nil,
              facebook: "acme.llc",
              twitter: nil,
-             founded_in: nil
+             founded_in: nil,
+             location: nil
            }
 
     assert Map.drop(version, [:id, :inserted_at]) == %{
@@ -238,7 +242,8 @@ defmodule PaperTrailTest.SimpleModeBangFunctions do
                  address: nil,
                  facebook: "acme.llc",
                  twitter: nil,
-                 founded_in: nil
+                 founded_in: nil,
+                 location: nil
                }),
              originator_id: user.id,
              origin: nil,
@@ -486,7 +491,8 @@ defmodule PaperTrailTest.SimpleModeBangFunctions do
              address: nil,
              facebook: nil,
              twitter: nil,
-             founded_in: nil
+             founded_in: nil,
+             location: nil
            }
 
     assert Map.drop(version, [:id, :inserted_at]) == %{
@@ -542,7 +548,8 @@ defmodule PaperTrailTest.SimpleModeBangFunctions do
              address: nil,
              facebook: "acme.llc",
              twitter: nil,
-             founded_in: nil
+             founded_in: nil,
+             location: nil
            }
 
     assert Map.drop(version, [:id, :inserted_at]) == %{
@@ -598,7 +605,8 @@ defmodule PaperTrailTest.SimpleModeBangFunctions do
              address: nil,
              facebook: "acme.llc",
              twitter: nil,
-             founded_in: nil
+             founded_in: nil,
+             location: nil
            }
 
     assert Map.drop(version, [:id, :inserted_at]) == %{
@@ -666,7 +674,8 @@ defmodule PaperTrailTest.SimpleModeBangFunctions do
              address: nil,
              facebook: "acme.llc",
              twitter: nil,
-             founded_in: nil
+             founded_in: nil,
+             location: nil
            }
 
     assert Map.drop(version, [:id, :inserted_at]) == %{
@@ -685,7 +694,8 @@ defmodule PaperTrailTest.SimpleModeBangFunctions do
                  address: nil,
                  facebook: "acme.llc",
                  twitter: nil,
-                 founded_in: nil
+                 founded_in: nil,
+                 location: nil
                }),
              originator_id: user.id,
              origin: nil,
@@ -695,7 +705,7 @@ defmodule PaperTrailTest.SimpleModeBangFunctions do
     assert company == company_before_deletion
   end
 
-  test "[multi tenant] PaperTrail.delete!/2 with an error raises Ecto.InvalidChangesetError" do
+  test "[multi tenant] PaperTrail.delete!/2 with an error raises Ecto.InvalidChangesetError" do
     tenant = MultiTenant.tenant()
 
     assert_raise(Ecto.InvalidChangesetError, fn ->
