@@ -210,7 +210,7 @@ defmodule PaperTrail do
   def update(changeset, options \\ [origin: nil, meta: nil, originator: nil, prefix: nil]) do
     Multi.new()
     |> Multi.update(changeset, options)
-    |> Multi.commit()
+    |> Multi.commit(options)
   end
 
   @doc """
@@ -261,7 +261,7 @@ defmodule PaperTrail do
   def delete(struct, options \\ [origin: nil, meta: nil, originator: nil, prefix: nil]) do
     Multi.new()
     |> Multi.delete(struct, options)
-    |> Multi.commit()
+    |> Multi.commit(options)
   end
 
   @doc """
