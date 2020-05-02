@@ -63,18 +63,18 @@ defmodule PaperTrail.Serializer do
     |> add_prefix(options[:prefix])
   end
 
-  def get_sequence_from_model(changeset) do
+  def get_sequence_from_model(changeset, options \\ []) do
     table_name =
       case Map.get(changeset, :data) do
         nil -> changeset.__struct__.__schema__(:source)
         _ -> changeset.data.__struct__.__schema__(:source)
       end
 
-    get_sequence_id(table_name)
+    get_sequence_id(table_name, options)
   end
 
-  def get_sequence_id(table_name) do
-    Ecto.Adapters.SQL.query!(RepoClient.repo(), "select last_value FROM #{table_name}_id_seq").rows
+  def get_sequence_id(table_name, options) do
+    Ecto.Adapters.SQL.query!(RepoClient.repo(options), "select last_value FROM #{table_name}_id_seq").rows
     |> List.first()
     |> List.first()
   end

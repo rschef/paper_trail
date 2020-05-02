@@ -22,13 +22,17 @@ defmodule PaperTrailTest do
     location: %{country: "Chile"}
   }
 
+  defmodule CustomPaperTrail do
+    use PaperTrail,
+      repo: PaperTrail.Repo,
+      strict_mode: false
+  end
+
   defdelegate serialize(data), to: Serializer
 
   doctest PaperTrail
 
   setup_all do
-    Application.put_env(:paper_trail, :strict_mode, false)
-    Application.put_env(:paper_trail, :repo, PaperTrail.Repo)
     Code.eval_file("lib/paper_trail.ex")
     Code.eval_file("lib/version.ex")
     :ok
@@ -228,7 +232,7 @@ defmodule PaperTrailTest do
     {:ok, insert_result} = create_company_with_version()
     {:ok, update_result} = update_company_with_version(insert_result[:model])
     company_before_deletion = first(Company, :id) |> @repo.one |> serialize
-    {:ok, result} = PaperTrail.delete(update_result[:model], originator: user)
+    {:ok, result} = CustomPaperTrail.delete(update_result[:model], originator: user)
 
     company_count = Company.count()
     version_count = Version.count()
@@ -285,7 +289,7 @@ defmodule PaperTrailTest do
     company_before_deletion = first(Company, :id) |> @repo.one
 
     changeset = Company.changeset(company_before_deletion, %{})
-    {:ok, result} = PaperTrail.delete(changeset, originator: user)
+    {:ok, result} = CustomPaperTrail.delete(changeset, originator: user)
 
     company_count = Company.count()
     version_count = Version.count()
@@ -344,10 +348,10 @@ defmodule PaperTrailTest do
       gender: true,
       company_id: insert_company_result[:model].id
     })
-    |> PaperTrail.insert()
+    |> CustomPaperTrail.insert()
 
     {:error, ecto_result} = insert_company_result[:model] |> Company.changeset() |> @repo.delete
-    {:error, result} = insert_company_result[:model] |> Company.changeset() |> PaperTrail.delete()
+    {:error, result} = insert_company_result[:model] |> Company.changeset() |> CustomPaperTrail.delete()
 
     assert Map.drop(result, [:repo_opts]) == Map.drop(ecto_result, [:repo_opts])
   end
@@ -361,7 +365,7 @@ defmodule PaperTrailTest do
         is_active: true,
         address: "Sesame street 100/3, 101010"
       })
-      |> PaperTrail.insert()
+      |> CustomPaperTrail.insert()
 
     {:ok, result} =
       Person.changeset(%Person{}, %{
@@ -370,7 +374,7 @@ defmodule PaperTrailTest do
         gender: true,
         company_id: new_company_result[:model].id
       })
-      |> PaperTrail.insert(origin: "admin", meta: %{linkname: "izelnakri"})
+      |> CustomPaperTrail.insert(origin: "admin", meta: %{linkname: "izelnakri"})
 
     person_count = Person.count()
     version_count = Version.count()
@@ -425,7 +429,7 @@ defmodule PaperTrailTest do
         gender: true,
         company_id: target_company_insertion[:model].id
       })
-      |> PaperTrail.insert(origin: "admin")
+      |> CustomPaperTrail.insert(origin: "admin")
 
     {:ok, result} =
       Person.changeset(insert_person_result[:model], %{
@@ -434,7 +438,7 @@ defmodule PaperTrailTest do
         birthdate: ~D[1992-04-01],
         company_id: initial_company_insertion[:model].id
       })
-      |> PaperTrail.update(origin: "scraper", meta: %{linkname: "izelnakri"})
+      |> CustomPaperTrail.update(origin: "scraper", meta: %{linkname: "izelnakri"})
 
     person_count = Person.count()
     version_count = Version.count()
@@ -491,7 +495,7 @@ defmodule PaperTrailTest do
         gender: true,
         company_id: target_company_insertion[:model].id
       })
-      |> PaperTrail.insert(origin: "admin")
+      |> CustomPaperTrail.insert(origin: "admin")
 
     {:ok, update_result} =
       Person.changeset(insert_person_result[:model], %{
@@ -500,12 +504,12 @@ defmodule PaperTrailTest do
         birthdate: ~D[1992-04-01],
         company_id: target_company_insertion[:model].id
       })
-      |> PaperTrail.update(origin: "scraper", meta: %{linkname: "izelnakri"})
+      |> CustomPaperTrail.update(origin: "scraper", meta: %{linkname: "izelnakri"})
 
     person_before_deletion = first(Person, :id) |> @repo.one |> serialize
 
     {:ok, result} =
-      PaperTrail.delete(
+      CustomPaperTrail.delete(
         update_result[:model],
         origin: "admin",
         meta: %{linkname: "izelnakri"}
@@ -548,11 +552,11 @@ defmodule PaperTrailTest do
     User.changeset(%User{}, %{token: "fake-token", username: "izelnakri"}) |> @repo.insert!
   end
 
-  defp create_company_with_version(params \\ @create_company_params, options \\ nil) do
-    Company.changeset(%Company{}, params) |> PaperTrail.insert(options)
+  defp create_company_with_version(params \\ @create_company_params, options \\ []) do
+    Company.changeset(%Company{}, params) |> CustomPaperTrail.insert(options)
   end
 
-  defp update_company_with_version(company, params \\ @update_company_params, options \\ nil) do
-    Company.changeset(company, params) |> PaperTrail.update(options)
+  defp update_company_with_version(company, params \\ @update_company_params, options \\ []) do
+    Company.changeset(company, params) |> CustomPaperTrail.update(options)
   end
 end

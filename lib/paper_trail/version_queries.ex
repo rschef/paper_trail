@@ -26,11 +26,11 @@ defmodule PaperTrail.VersionQueries do
     iex(1)> PaperTrail.VersionQueries.get_versions(record, [prefix: "tenant_id"])
   """
   @spec get_versions(record :: Ecto.Schema.t(), options :: []) :: Ecto.Query.t()
-  def get_versions(record, options) when is_map(record) do
+  def get_versions(record, options) when is_map(record) and is_list(options) do
     item_type = record.__struct__ |> Module.split() |> List.last()
 
     version_query(item_type, PaperTrail.get_model_id(record), options)
-    |> PaperTrail.RepoClient.repo().all
+    |> PaperTrail.RepoClient.repo(options).all
   end
 
   @doc """
@@ -46,7 +46,7 @@ defmodule PaperTrail.VersionQueries do
   @spec get_versions(model :: module, id :: pos_integer, options :: []) :: Ecto.Query.t()
   def get_versions(model, id, options) do
     item_type = model |> Module.split() |> List.last()
-    version_query(item_type, id, options) |> PaperTrail.RepoClient.repo().all
+    version_query(item_type, id, options) |> PaperTrail.RepoClient.repo(options).all
   end
 
   @doc """
@@ -77,7 +77,7 @@ defmodule PaperTrail.VersionQueries do
     item_type = record.__struct__ |> Module.split() |> List.last()
 
     last(version_query(item_type, PaperTrail.get_model_id(record), options))
-    |> PaperTrail.RepoClient.repo().one
+    |> PaperTrail.RepoClient.repo(options).one
   end
 
   @doc """
@@ -93,14 +93,14 @@ defmodule PaperTrail.VersionQueries do
   @spec get_version(model :: module, id :: pos_integer, options :: []) :: Ecto.Query.t()
   def get_version(model, id, options) do
     item_type = model |> Module.split() |> List.last()
-    last(version_query(item_type, id, options)) |> PaperTrail.RepoClient.repo().one
+    last(version_query(item_type, id, options)) |> PaperTrail.RepoClient.repo(options).one
   end
 
   @doc """
   Gets the current model record/struct of a version
   """
-  def get_current_model(version) do
-    PaperTrail.RepoClient.repo().get(
+  def get_current_model(version, options \\ []) do
+    PaperTrail.RepoClient.repo(options).get(
       ("Elixir." <> version.item_type) |> String.to_existing_atom(),
       version.item_id
     )
