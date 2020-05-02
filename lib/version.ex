@@ -8,6 +8,15 @@ defmodule PaperTrail.Version do
   # @item_type Application.get_env(:paper_trail, :item_type, :integer)
   # @originator_type Application.get_env(:paper_trail, :originator_type, :integer)
 
+  @type t :: %__MODULE__{
+    event: String.t(),
+    item_type: String.t(),
+    item_id: any,
+    item_changes: map,
+    originator_id: any,
+    meta: map
+  }
+
   schema "versions" do
     field(:event, :string)
     field(:item_type, :string)
@@ -34,7 +43,7 @@ defmodule PaperTrail.Version do
     timestamps(updated_at: false)
   end
 
-  def changeset(model, params \\ :empty) do
+  def changeset(model, params \\ %{}) do
     model
     |> cast(params, [:item_type, :item_id, :item_changes, :origin, :originator_id, :meta])
     |> validate_required([:event, :item_type, :item_id, :item_changes])

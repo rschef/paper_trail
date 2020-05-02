@@ -11,7 +11,7 @@ defmodule PaperTrail.VersionQueries do
   @doc """
   Gets all the versions of a record given a module and its id
   """
-  @spec get_versions(model :: module, id :: pos_integer) :: Ecto.Query.t()
+  @spec get_versions(model :: module, id :: any) :: Ecto.Query.t()
   def get_versions(model, id) when is_atom(model) and is_integer(id),
     do: get_versions(model, id, [])
 
@@ -25,7 +25,7 @@ defmodule PaperTrail.VersionQueries do
 
     iex(1)> PaperTrail.VersionQueries.get_versions(record, [prefix: "tenant_id"])
   """
-  @spec get_versions(record :: Ecto.Schema.t(), options :: []) :: Ecto.Query.t()
+  @spec get_versions(record :: Ecto.Schema.t(), options :: keyword) :: Ecto.Query.t()
   def get_versions(record, options) when is_map(record) and is_list(options) do
     item_type = record.__struct__ |> Module.split() |> List.last()
 
@@ -43,7 +43,7 @@ defmodule PaperTrail.VersionQueries do
 
     iex(1)> PaperTrail.VersionQueries.get_versions(ModelName, id, [prefix: "tenant_id"])
   """
-  @spec get_versions(model :: module, id :: pos_integer, options :: []) :: Ecto.Query.t()
+  @spec get_versions(model :: module, id :: any, options :: keyword) :: Ecto.Query.t()
   def get_versions(model, id, options) do
     item_type = model |> Module.split() |> List.last()
     version_query(item_type, id, options) |> PaperTrail.RepoClient.repo(options).all
@@ -58,7 +58,7 @@ defmodule PaperTrail.VersionQueries do
   @doc """
   Gets the last version of a record given its module reference and its id.
   """
-  @spec get_version(model :: module, id :: pos_integer) :: Ecto.Query.t()
+  @spec get_version(model :: module, id :: any) :: Ecto.Query.t()
   def get_version(model, id) when is_atom(model) and is_integer(id),
     do: get_version(model, id, [])
 
@@ -72,7 +72,7 @@ defmodule PaperTrail.VersionQueries do
 
     iex(1)> PaperTrail.VersionQueries.get_version(record, [prefix: "tenant_id"])
   """
-  @spec get_version(record :: Ecto.Schema.t(), options :: []) :: Ecto.Query.t()
+  @spec get_version(record :: Ecto.Schema.t(), options :: keyword) :: Ecto.Query.t()
   def get_version(record, options) when is_map(record) do
     item_type = record.__struct__ |> Module.split() |> List.last()
 
@@ -90,7 +90,7 @@ defmodule PaperTrail.VersionQueries do
 
     iex(1)> PaperTrail.VersionQueries.get_version(ModelName, id, [prefix: "tenant_id"])
   """
-  @spec get_version(model :: module, id :: pos_integer, options :: []) :: Ecto.Query.t()
+  @spec get_version(model :: module, id :: any, options :: keyword) :: Ecto.Query.t()
   def get_version(model, id, options) do
     item_type = model |> Module.split() |> List.last()
     last(version_query(item_type, id, options)) |> PaperTrail.RepoClient.repo(options).one

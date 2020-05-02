@@ -35,12 +35,12 @@ defmodule PaperTrail do
   @callback delete!(Ecto.Changeset.t(), opts) :: Ecto.Schema.t()
 
   @callback get_version(Ecto.Schema.t()) :: Ecto.Query.t()
-  @callback get_version(Ecto.Schema.t(), any) :: Ecto.Query.t()
-  @callback get_version(Ecto.Schema.t(), any, keyword) :: Ecto.Query.t()
+  @callback get_version(module, any) :: Ecto.Query.t()
+  @callback get_version(module, any, keyword) :: Ecto.Query.t()
 
   @callback get_versions(Ecto.Schema.t()) :: Ecto.Query.t()
-  @callback get_versions(Ecto.Schema.t(), any) :: Ecto.Query.t()
-  @callback get_versions(Ecto.Schema.t(), any, keyword) :: Ecto.Query.t()
+  @callback get_versions(module, any) :: Ecto.Query.t()
+  @callback get_versions(module, any, keyword) :: Ecto.Query.t()
 
   @callback get_current_model(Version.t()) :: Ecto.Schema.t()
 

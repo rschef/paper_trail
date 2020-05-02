@@ -11,7 +11,11 @@ defmodule PaperTrail.Mixfile do
       start_permanent: Mix.env() == :prod,
       elixirc_paths: elixirc_paths(Mix.env()),
       package: package(),
-      deps: deps()
+      deps: deps(),
+      dialyzer: [
+        plt_core_path: "priv/plts/",
+        plt_add_apps: [:mix, :ecto_sql]
+      ],
     ]
   end
 
@@ -30,7 +34,8 @@ defmodule PaperTrail.Mixfile do
       {:ecto_sql, ">= 3.4.0"},
       {:ex_doc, ">= 0.21.3"},
       {:postgrex, ">= 0.0.0", only: [:dev, :test]},
-      {:jason, ">= 1.2.0", only: [:dev, :test]}
+      {:jason, ">= 1.2.0", only: [:dev, :test]},
+      {:dialyxir, "~> 1.0", runtime: false, only: [:dev, :test]}
     ]
   end
 
