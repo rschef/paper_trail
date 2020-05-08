@@ -143,14 +143,22 @@ defmodule PaperTrail.Multi do
             {:error, Map.merge(changeset, %{repo: repo, changes: filtered_changes})}
 
           {:ok, map} ->
-            {:ok, Map.drop(map, [:initial_version])}
+            {:ok, map |> Map.drop([:initial_version]) |> return_operation(options)}
         end
 
       _ ->
         case transaction do
           {:error, :model, changeset, %{}} -> {:error, Map.merge(changeset, %{repo: repo})}
-          _ -> transaction
+          {:ok, result} -> {:ok, return_operation(result, options)}
         end
+    end
+  end
+
+  @spec return_operation(map, Keyword.t()) :: any
+  defp return_operation(result, options) do
+    case Keyword.get(options, :return_operation) do
+      nil -> result
+      operation -> Map.fetch!(result, operation)
     end
   end
 end

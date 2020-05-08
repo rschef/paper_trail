@@ -91,6 +91,18 @@ defmodule PaperTrailTest do
     assert company == first(Company, :id) |> @repo.one |> serialize
   end
 
+  test "creating a company with return_operation option works" do
+    {:ok, company} = create_company_with_version(@create_company_params, return_operation: :model)
+
+    company_count = Company.count()
+    version_count = Version.count()
+
+    assert company_count == 1
+    assert version_count == 1
+
+    assert company == Company |> first(:id) |> @repo.one
+  end
+
   test "PaperTrail.insert/2 with an error returns and error tuple like Repo.insert/2" do
     result = create_company_with_version(%{name: nil, is_active: true, city: "Greenwich"})
 
