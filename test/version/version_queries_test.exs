@@ -11,8 +11,13 @@ defmodule PaperTrailTest.VersionQueries do
 
   defdelegate repo, to: RepoClient
 
+  defmodule CustomPaperTrail do
+    use PaperTrail,
+      repo: PaperTrail.Repo,
+      strict_mode: false
+  end
+
   setup_all do
-    Application.put_env(:paper_trail, :repo, PaperTrail.Repo)
     Application.put_env(:paper_trail, :originator_type, :integer)
     Code.eval_file("lib/version.ex")
     MultiTenant.setup_tenant(repo())
@@ -23,7 +28,7 @@ defmodule PaperTrailTest.VersionQueries do
       is_active: true,
       city: "Greenwich"
     })
-    |> PaperTrail.insert()
+    |> CustomPaperTrail.insert()
 
     old_company = first(Company, :id) |> repo().one
 
@@ -32,22 +37,22 @@ defmodule PaperTrailTest.VersionQueries do
       website: "http://www.acme.com",
       facebook: "acme.llc"
     })
-    |> PaperTrail.update()
+    |> CustomPaperTrail.update()
 
-    first(Company, :id) |> repo().one |> PaperTrail.delete()
+    first(Company, :id) |> repo().one |> CustomPaperTrail.delete()
 
     Company.changeset(%Company{}, %{
       name: "Acme LLC",
       website: "http://www.acme.com"
     })
-    |> PaperTrail.insert()
+    |> CustomPaperTrail.insert()
 
     Company.changeset(%Company{}, %{
       name: "Another Company Corp.",
       is_active: true,
       address: "Sesame street 100/3, 101010"
     })
-    |> PaperTrail.insert()
+    |> CustomPaperTrail.insert()
 
     company = first(Company, :id) |> repo().one
 
@@ -58,7 +63,7 @@ defmodule PaperTrailTest.VersionQueries do
       gender: true,
       company_id: company.id
     })
-    |> PaperTrail.insert(set_by: "admin")
+    |> CustomPaperTrail.insert(set_by: "admin")
 
     another_company =
       repo().one(
@@ -75,7 +80,7 @@ defmodule PaperTrailTest.VersionQueries do
       birthdate: ~D[1992-04-01],
       company_id: another_company.id
     })
-    |> PaperTrail.update(set_by: "user:1", meta: %{linkname: "izelnakri"})
+    |> CustomPaperTrail.update(set_by: "user:1", meta: %{linkname: "izelnakri"})
 
     # Multi tenant
     Company.changeset(%Company{}, %{
@@ -84,7 +89,7 @@ defmodule PaperTrailTest.VersionQueries do
       city: "Greenwich"
     })
     |> MultiTenant.add_prefix_to_changeset()
-    |> PaperTrail.insert(prefix: MultiTenant.tenant())
+    |> CustomPaperTrail.insert(prefix: MultiTenant.tenant())
 
     company_multi =
       first(Company, :id)
@@ -98,7 +103,7 @@ defmodule PaperTrailTest.VersionQueries do
       company_id: company_multi.id
     })
     |> MultiTenant.add_prefix_to_changeset()
-    |> PaperTrail.insert(set_by: "admin", prefix: MultiTenant.tenant())
+    |> CustomPaperTrail.insert(set_by: "admin", prefix: MultiTenant.tenant())
 
     :ok
   end
@@ -118,11 +123,11 @@ defmodule PaperTrailTest.VersionQueries do
       |> MultiTenant.add_prefix_to_query()
       |> repo().one
 
-    assert PaperTrail.get_version(last_person) == target_version
-    assert PaperTrail.get_version(Person, last_person.id) == target_version
-    assert PaperTrail.get_version(last_person_multi, prefix: tenant) == target_version_multi
+    assert CustomPaperTrail.get_version(last_person) == target_version
+    assert CustomPaperTrail.get_version(Person, last_person.id) == target_version
+    assert CustomPaperTrail.get_version(last_person_multi, prefix: tenant) == target_version_multi
 
-    assert PaperTrail.get_version(Person, last_person_multi.id, prefix: tenant) ==
+    assert CustomPaperTrail.get_version(Person, last_person_multi.id, prefix: tenant) ==
              target_version_multi
 
     assert target_version != target_version_multi
@@ -153,11 +158,11 @@ defmodule PaperTrailTest.VersionQueries do
       |> MultiTenant.add_prefix_to_query()
       |> repo().all
 
-    assert PaperTrail.get_versions(last_person) == target_versions
-    assert PaperTrail.get_versions(Person, last_person.id) == target_versions
-    assert PaperTrail.get_versions(last_person_multi, prefix: tenant) == target_versions_multi
+    assert CustomPaperTrail.get_versions(last_person) == target_versions
+    assert CustomPaperTrail.get_versions(Person, last_person.id) == target_versions
+    assert CustomPaperTrail.get_versions(last_person_multi, prefix: tenant) == target_versions_multi
 
-    assert PaperTrail.get_versions(Person, last_person_multi.id, prefix: tenant) ==
+    assert CustomPaperTrail.get_versions(Person, last_person_multi.id, prefix: tenant) ==
              target_versions_multi
 
     assert target_versions != target_versions_multi
@@ -172,7 +177,7 @@ defmodule PaperTrailTest.VersionQueries do
       |> first
       |> repo().one
 
-    assert PaperTrail.get_current_model(first_version) == person
+    assert CustomPaperTrail.get_current_model(first_version) == person
   end
 
   # query meta data!!

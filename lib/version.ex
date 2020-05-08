@@ -8,6 +8,15 @@ defmodule PaperTrail.Version do
   # @item_type Application.get_env(:paper_trail, :item_type, :integer)
   # @originator_type Application.get_env(:paper_trail, :originator_type, :integer)
 
+  @type t :: %__MODULE__{
+    event: String.t(),
+    item_type: String.t(),
+    item_id: any,
+    item_changes: map,
+    originator_id: any,
+    meta: map
+  }
+
   schema "versions" do
     field(:event, :string)
     field(:item_type, :string)
@@ -34,7 +43,7 @@ defmodule PaperTrail.Version do
     timestamps(updated_at: false)
   end
 
-  def changeset(model, params \\ :empty) do
+  def changeset(model, params \\ %{}) do
     model
     |> cast(params, [:item_type, :item_id, :item_changes, :origin, :originator_id, :meta])
     |> validate_required([:event, :item_type, :item_id, :item_changes])
@@ -43,44 +52,30 @@ defmodule PaperTrail.Version do
   @doc """
   Returns the count of all version records in the database
   """
-  def count do
-    from(version in __MODULE__, select: count(version.id)) |> PaperTrail.RepoClient.repo().one()
-  end
-
-  def count(options) do
+  def count(options \\ []) do
     from(version in __MODULE__, select: count(version.id))
     |> Ecto.Queryable.to_query()
     |> Map.put(:prefix, options[:prefix])
-    |> PaperTrail.RepoClient.repo().one
+    |> PaperTrail.RepoClient.repo(options).one
   end
 
   @doc """
   Returns the first version record in the database by :inserted_at
   """
-  def first do
-    from(record in __MODULE__, limit: 1, order_by: [asc: :inserted_at])
-    |> PaperTrail.RepoClient.repo().one
-  end
-
-  def first(options) do
+  def first(options \\ []) do
     from(record in __MODULE__, limit: 1, order_by: [asc: :inserted_at])
     |> Ecto.Queryable.to_query()
     |> Map.put(:prefix, options[:prefix])
-    |> PaperTrail.RepoClient.repo().one
+    |> PaperTrail.RepoClient.repo(options).one
   end
 
   @doc """
   Returns the last version record in the database by :inserted_at
   """
-  def last do
-    from(record in __MODULE__, limit: 1, order_by: [desc: :inserted_at])
-    |> PaperTrail.RepoClient.repo().one
-  end
-
-  def last(options) do
+  def last(options \\ []) do
     from(record in __MODULE__, limit: 1, order_by: [desc: :inserted_at])
     |> Ecto.Queryable.to_query()
     |> Map.put(:prefix, options[:prefix])
-    |> PaperTrail.RepoClient.repo().one
+    |> PaperTrail.RepoClient.repo(options).one
   end
 end
