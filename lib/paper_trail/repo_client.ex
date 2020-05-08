@@ -17,4 +17,11 @@ defmodule PaperTrail.RepoClient do
       strict_mode -> strict_mode
     end
   end
+
+  def return_operation(opts \\ []) do
+    case Keyword.fetch(opts, :return_operation) do
+      :error -> Application.get_env(:paper_trail, :return_operation, nil)
+      {:ok, return_operation} -> return_operation
+    end
+  end
 end

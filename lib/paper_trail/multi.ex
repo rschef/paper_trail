@@ -156,7 +156,7 @@ defmodule PaperTrail.Multi do
 
   @spec return_operation(map, Keyword.t()) :: any
   defp return_operation(result, options) do
-    case Keyword.get(options, :return_operation) do
+    case RepoClient.return_operation(options) do
       nil -> result
       operation -> Map.fetch!(result, operation)
     end

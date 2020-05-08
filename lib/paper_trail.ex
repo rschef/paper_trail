@@ -25,16 +25,13 @@ defmodule PaperTrail do
     return_operation: return_operation
   ]
 
-  @return_operation Application.get_env(:paper_trail, :return_operation, nil)
-
   @default_opts [
     repo: nil,
     strict_mode: nil,
     origin: nil,
     meta: nil,
     originator: nil,
-    prefix: nil,
-    return_operation: @return_operation
+    prefix: nil
   ]
 
   @type insert_opts :: [
@@ -57,8 +54,7 @@ defmodule PaperTrail do
     originator: nil,
     prefix: nil,
     model_key: :model,
-    version_key: :version,
-    return_operation: @return_operation
+    version_key: :version
   ]
 
   @callback insert(Ecto.Changeset.t(), insert_opts) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
@@ -79,10 +75,16 @@ defmodule PaperTrail do
   @callback get_current_model(Version.t()) :: Ecto.Schema.t()
 
   defmacro __using__(opts \\ []) do
+    return_operation_opts = case Keyword.fetch(opts, :return_operation) do
+      :error -> []
+      {:ok, return_operation} -> [return_operation: return_operation]
+    end
+
     client_opts = [
       repo: RepoClient.repo(opts),
       strict_mode: RepoClient.strict_mode(opts)
-    ]
+    ] ++ return_operation_opts
+
     default_insert_opts = PaperTrail.default_insert_opts()
     default_opts = PaperTrail.default_opts()
 
