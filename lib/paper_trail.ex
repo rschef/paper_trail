@@ -7,24 +7,56 @@ defmodule PaperTrail do
   alias PaperTrail.Version
   alias PaperTrail.VersionQueries
 
+  @type repo :: module | nil
+  @type strict_mode :: boolean | nil
+  @type origin :: String.t() | nil
+  @type meta :: map | nil
+  @type originator :: Ecto.Schema.t() | nil
+  @type prefix :: String.t() | nil
+  @type return_operation :: :model | :version | atom | nil
+
   @type opts :: [
-    repo: module | nil,
-    strict_mode: boolean | nil,
-    origin: String.t() | nil,
-    meta: map | nil,
-    originator: Ecto.Schema.t() | nil,
-    prefix: String.t() | nil
+    repo: repo,
+    strict_mode: strict_mode,
+    origin: origin,
+    meta: meta,
+    originator: originator,
+    prefix: prefix,
+    return_operation: return_operation
+  ]
+
+  @default_opts [
+    repo: nil,
+    strict_mode: nil,
+    origin: nil,
+    meta: nil,
+    originator: nil,
+    prefix: nil,
+    return_operation: nil
   ]
 
   @type insert_opts :: [
-    repo: module | nil,
-    strict_mode: boolean | nil,
-    origin: String.t() | nil,
-    meta: map | nil,
-    originator: Ecto.Schema.t() | nil,
-    prefix: String.t() | nil,
+    repo: repo,
+    strict_mode: strict_mode,
+    origin: origin,
+    meta: meta,
+    originator: originator,
+    prefix: prefix,
     model_key: atom,
-    version_key: atom
+    version_key: atom,
+    return_operation: return_operation
+  ]
+
+  @default_insert_opts [
+    repo: nil,
+    strict_mode: nil,
+    origin: nil,
+    meta: nil,
+    originator: nil,
+    prefix: nil,
+    model_key: :model,
+    version_key: :version,
+    return_operation: nil
   ]
 
   @callback insert(Ecto.Changeset.t(), insert_opts) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
@@ -49,37 +81,39 @@ defmodule PaperTrail do
       repo: RepoClient.repo(opts),
       strict_mode: RepoClient.strict_mode(opts)
     ]
+    default_insert_opts = PaperTrail.default_insert_opts()
+    default_opts = PaperTrail.default_opts()
 
     quote do
       @behaviour PaperTrail
 
       @impl true
-      def insert(changeset, options \\ [origin: nil, meta: nil, originator: nil, prefix: nil, model_key: :model, version_key: :version]) do
+      def insert(changeset, options \\ unquote(default_insert_opts)) do
         PaperTrail.insert(changeset, merge_options(options))
       end
 
       @impl true
-      def insert!(changeset, options \\ [origin: nil, meta: nil, originator: nil, prefix: nil, model_key: :model, version_key: :version]) do
+      def insert!(changeset, options \\ unquote(default_insert_opts)) do
         PaperTrail.insert!(changeset, merge_options(options))
       end
 
       @impl true
-      def update(changeset, options \\ [origin: nil, meta: nil, originator: nil, prefix: nil]) do
+      def update(changeset, options \\ unquote(default_opts)) do
         PaperTrail.update(changeset, merge_options(options))
       end
 
       @impl true
-      def update!(changeset, options \\ [origin: nil, meta: nil, originator: nil, prefix: nil]) do
+      def update!(changeset, options \\ unquote(default_opts)) do
         PaperTrail.update!(changeset, merge_options(options))
       end
 
       @impl true
-      def delete(struct, options \\ [origin: nil, meta: nil, originator: nil, prefix: nil]) do
+      def delete(struct, options \\ unquote(default_opts)) do
         PaperTrail.delete(struct, merge_options(options))
       end
 
       @impl true
-      def delete!(struct, options \\ [origin: nil, meta: nil, originator: nil, prefix: nil]) do
+      def delete!(struct, options \\ unquote(default_opts)) do
         PaperTrail.delete!(struct, merge_options(options))
       end
 
@@ -152,7 +186,7 @@ defmodule PaperTrail do
   Inserts a record to the database with a related version insertion in one transaction
   """
   @spec insert(Ecto.Changeset.t(), insert_opts) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
-  def insert(changeset, options \\ [origin: nil, meta: nil, originator: nil, prefix: nil, model_key: :model, version_key: :version]) do
+  def insert(changeset, options \\ @default_insert_opts) do
     Multi.new()
     |> Multi.insert(changeset, options)
     |> Multi.commit(options)
@@ -162,7 +196,7 @@ defmodule PaperTrail do
   Same as insert/2 but returns only the model struct or raises if the changeset is invalid.
   """
   @spec insert!(Ecto.Schema.t(), insert_opts) :: Ecto.Schema.t()
-  def insert!(changeset, options \\ [origin: nil, meta: nil, originator: nil, prefix: nil, model_key: :model, version_key: :version]) do
+  def insert!(changeset, options \\ @default_insert_opts) do
     repo = RepoClient.repo(options)
 
     repo.transaction(fn ->
@@ -207,7 +241,7 @@ defmodule PaperTrail do
   Updates a record from the database with a related version insertion in one transaction
   """
   @spec update(Ecto.Changeset.t(), opts) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
-  def update(changeset, options \\ [origin: nil, meta: nil, originator: nil, prefix: nil]) do
+  def update(changeset, options \\ @default_opts) do
     Multi.new()
     |> Multi.update(changeset, options)
     |> Multi.commit(options)
@@ -217,7 +251,7 @@ defmodule PaperTrail do
   Same as update/2 but returns only the model struct or raises if the changeset is invalid.
   """
   @spec update!(Ecto.Schema.t(), opts) :: Ecto.Schema.t()
-  def update!(changeset, options \\ [origin: nil, meta: nil, originator: nil, prefix: nil]) do
+  def update!(changeset, options \\ @default_opts) do
     repo = RepoClient.repo(options)
 
     repo.transaction(fn ->
@@ -258,7 +292,7 @@ defmodule PaperTrail do
   Deletes a record from the database with a related version insertion in one transaction
   """
   @spec delete(Ecto.Changeset.t(), opts) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
-  def delete(struct, options \\ [origin: nil, meta: nil, originator: nil, prefix: nil]) do
+  def delete(struct, options \\ @default_opts) do
     Multi.new()
     |> Multi.delete(struct, options)
     |> Multi.commit(options)
@@ -268,7 +302,7 @@ defmodule PaperTrail do
   Same as delete/2 but returns only the model struct or raises if the changeset is invalid.
   """
   @spec delete!(Ecto.Schema.t(), opts) :: Ecto.Schema.t()
-  def delete!(struct, options \\ [origin: nil, meta: nil, originator: nil, prefix: nil]) do
+  def delete!(struct, options \\ @default_opts) do
     repo = RepoClient.repo(options)
 
     repo.transaction(fn ->
@@ -279,4 +313,10 @@ defmodule PaperTrail do
     end)
     |> elem(1)
   end
+
+  @spec default_insert_opts :: Keyword.t()
+  def default_insert_opts, do: @default_insert_opts
+
+  @spec default_opts :: Keyword.t()
+  def default_opts, do: @default_opts
 end
