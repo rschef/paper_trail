@@ -160,7 +160,9 @@ defmodule PaperTrailTest.VersionQueries do
 
     assert CustomPaperTrail.get_versions(last_person) == target_versions
     assert CustomPaperTrail.get_versions(Person, last_person.id) == target_versions
-    assert CustomPaperTrail.get_versions(last_person_multi, prefix: tenant) == target_versions_multi
+
+    assert CustomPaperTrail.get_versions(last_person_multi, prefix: tenant) ==
+             target_versions_multi
 
     assert CustomPaperTrail.get_versions(Person, last_person_multi.id, prefix: tenant) ==
              target_versions_multi

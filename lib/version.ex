@@ -9,13 +9,13 @@ defmodule PaperTrail.Version do
   # @originator_type Application.get_env(:paper_trail, :originator_type, :integer)
 
   @type t :: %__MODULE__{
-    event: String.t(),
-    item_type: String.t(),
-    item_id: any,
-    item_changes: map,
-    originator_id: any,
-    meta: map
-  }
+          event: String.t(),
+          item_type: String.t(),
+          item_id: any,
+          item_changes: map,
+          originator_id: any,
+          meta: map
+        }
 
   schema "versions" do
     field(:event, :string)

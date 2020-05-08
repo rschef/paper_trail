@@ -1,5 +1,4 @@
 defmodule PaperTrail.Serializer do
-
   alias PaperTrail.RepoClient
   alias PaperTrail.Version
 
@@ -74,7 +73,10 @@ defmodule PaperTrail.Serializer do
   end
 
   def get_sequence_id(table_name, options) do
-    Ecto.Adapters.SQL.query!(RepoClient.repo(options), "select last_value FROM #{table_name}_id_seq").rows
+    Ecto.Adapters.SQL.query!(
+      RepoClient.repo(options),
+      "select last_value FROM #{table_name}_id_seq"
+    ).rows
     |> List.first()
     |> List.first()
   end

@@ -363,7 +363,9 @@ defmodule PaperTrailTest do
     |> CustomPaperTrail.insert()
 
     {:error, ecto_result} = insert_company_result[:model] |> Company.changeset() |> @repo.delete
-    {:error, result} = insert_company_result[:model] |> Company.changeset() |> CustomPaperTrail.delete()
+
+    {:error, result} =
+      insert_company_result[:model] |> Company.changeset() |> CustomPaperTrail.delete()
 
     assert Map.drop(result, [:repo_opts]) == Map.drop(ecto_result, [:repo_opts])
   end
@@ -561,39 +563,45 @@ defmodule PaperTrailTest do
   end
 
   test "inserting, updating and deleting a company with model_key option works" do
-    {:ok, %{
-      insert_model: %Company{} = insert_model,
-      insert_version: %Version{} = insert_version
-    }} = create_company_with_version(
-      @create_company_params,
-      model_key: :insert_model,
-      version_key: :insert_version
-    )
+    {:ok,
+     %{
+       insert_model: %Company{} = insert_model,
+       insert_version: %Version{} = insert_version
+     }} =
+      create_company_with_version(
+        @create_company_params,
+        model_key: :insert_model,
+        version_key: :insert_version
+      )
 
     assert insert_model == Company |> first(:id) |> @repo.one
     assert insert_version.id == Version |> first(:id) |> @repo.one |> Map.get(:id)
 
-    {:ok, %{
-      update_model: %Company{} = update_model,
-      update_version: %Version{} = update_version
-    }} = update_company_with_version(
-      insert_model,
-      @update_company_params,
-      model_key: :update_model,
-      version_key: :update_version
-    )
+    {:ok,
+     %{
+       update_model: %Company{} = update_model,
+       update_version: %Version{} = update_version
+     }} =
+      update_company_with_version(
+        insert_model,
+        @update_company_params,
+        model_key: :update_model,
+        version_key: :update_version
+      )
 
     assert update_model == Company |> last(:id) |> @repo.one
     assert update_version.id == Version |> last(:id) |> @repo.one |> Map.get(:id)
 
-    {:ok, %{
-      delete_model: %Company{} = delete_model,
-      delete_version: %Version{} = delete_version
-    }} = CustomPaperTrail.delete(
-      update_model,
-      model_key: :delete_model,
-      version_key: :delete_version
-    )
+    {:ok,
+     %{
+       delete_model: %Company{} = delete_model,
+       delete_version: %Version{} = delete_version
+     }} =
+      CustomPaperTrail.delete(
+        update_model,
+        model_key: :delete_model,
+        version_key: :delete_version
+      )
 
     assert delete_model != Company |> last(:id) |> @repo.one
     assert delete_version.id == Version |> last(:id) |> @repo.one |> Map.get(:id)
