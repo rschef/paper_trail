@@ -25,6 +25,8 @@ defmodule PaperTrail do
     return_operation: return_operation
   ]
 
+  @return_operation Application.get_env(:paper_trail, :return_operation, nil)
+
   @default_opts [
     repo: nil,
     strict_mode: nil,
@@ -32,7 +34,7 @@ defmodule PaperTrail do
     meta: nil,
     originator: nil,
     prefix: nil,
-    return_operation: nil
+    return_operation: @return_operation
   ]
 
   @type insert_opts :: [
@@ -56,7 +58,7 @@ defmodule PaperTrail do
     prefix: nil,
     model_key: :model,
     version_key: :version,
-    return_operation: nil
+    return_operation: @return_operation
   ]
 
   @callback insert(Ecto.Changeset.t(), insert_opts) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
