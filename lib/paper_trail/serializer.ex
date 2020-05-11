@@ -135,11 +135,12 @@ defmodule PaperTrail.Serializer do
     end
   end
 
-  defp dump_field!(_schema, _field, :binary_id, value, _adapter) when is_binary(value),
-    do: value
-
   defp dump_field!(schema, field, type, value, adapter) do
     case Ecto.Type.adapter_dump(adapter, type, value) do
+      {:ok, <<_::128>> = binary} ->
+        {:ok, string} = Ecto.UUID.load(binary)
+        string
+
       {:ok, value} ->
         value
 
