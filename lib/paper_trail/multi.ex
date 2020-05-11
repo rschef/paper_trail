@@ -6,6 +6,16 @@ defmodule PaperTrail.Multi do
   alias PaperTrail.RepoClient
   alias PaperTrail.Serializer
 
+  @type multi :: Ecto.Multi.t()
+  @type changeset :: Ecto.Changeset.t()
+  @type options :: PaperTrail.options()
+  @type queryable :: Ecto.Queryable.t()
+  @type struct_or_changeset :: Ecto.Schema.t() | Ecto.Changeset.t()
+  @type result ::
+    {:ok, any()}
+    | {:error, any()}
+    | {:error, Ecto.Multi.name(), any(), %{required(Ecto.Multi.name()) => any()}}
+
   @default_model_key :model
   @default_version_key :version
 
@@ -26,6 +36,7 @@ defmodule PaperTrail.Multi do
   defdelegate get_item_type(data), to: Serializer
   defdelegate get_model_id(model), to: Serializer
 
+  @spec insert(multi, changeset, options) :: multi
   def insert(%Ecto.Multi{} = multi, changeset, options \\ []) do
     model_key = get_model_key(options)
     version_key = get_version_key(options)
@@ -77,6 +88,7 @@ defmodule PaperTrail.Multi do
     end
   end
 
+  @spec update(multi, changeset, options) :: multi
   def update(
         %Ecto.Multi{} = multi,
         changeset,
@@ -123,22 +135,24 @@ defmodule PaperTrail.Multi do
     end
   end
 
+  @spec delete(multi, struct_or_changeset, options) :: multi
   def delete(
         %Ecto.Multi{} = multi,
-        struct,
+        struct_or_changeset,
         options \\ []
       ) do
     model_key = get_model_key(options)
     version_key = get_version_key(options)
 
     multi
-    |> Ecto.Multi.delete(model_key, struct, options)
+    |> Ecto.Multi.delete(model_key, struct_or_changeset, options)
     |> Ecto.Multi.run(version_key, fn repo, %{} ->
-      version = make_version_struct(%{event: "delete"}, struct, options)
+      version = make_version_struct(%{event: "delete"}, struct_or_changeset, options)
       repo.insert(version, options)
     end)
   end
 
+  @spec commit(multi, options) :: result
   def commit(%Ecto.Multi{} = multi, options \\ []) do
     model_key = get_model_key(options)
     repo = RepoClient.repo(options)
