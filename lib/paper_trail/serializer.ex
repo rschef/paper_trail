@@ -69,6 +69,7 @@ defmodule PaperTrail.Serializer do
   def make_version_structs(%{event: "update"}, queryable, changes, options) do
     {_table, schema} = queryable.from.source
     item_type = schema |> struct() |> get_item_type()
+    [primary_key] = schema.__schema__(:primary_key)
     changes_map = Map.new(changes)
     originator = RepoClient.originator()
     originator_ref = options[originator[:name]] || options[:originator]
@@ -80,12 +81,12 @@ defmodule PaperTrail.Serializer do
     repo.all(
       from(q in queryable,
         select: %{
-          event: "update",
-          item_type: ^item_type,
-          item_id: q.id,
+          event: type(^"update", :string),
+          item_type: type(^item_type, :string),
+          item_id: field(q, ^primary_key),
           item_changes: type(^changes_map, :map),
-          originator_id: ^originator_id,
-          origin: ^origin,
+          originator_id: type(^originator_id, :string),
+          origin: type(^origin, :string),
           meta: type(^meta, :map),
           inserted_at: type(fragment("CURRENT_TIMESTAMP"), :naive_datetime)
         }
