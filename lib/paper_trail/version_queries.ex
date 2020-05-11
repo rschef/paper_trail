@@ -12,7 +12,7 @@ defmodule PaperTrail.VersionQueries do
   Gets all the versions of a record given a module and its id
   """
   @spec get_versions(model :: module, id :: any) :: Ecto.Query.t()
-  def get_versions(model, id) when is_atom(model) and is_integer(id),
+  def get_versions(model, id) when is_atom(model) and not is_list(id),
     do: get_versions(model, id, [])
 
   @doc """
@@ -59,7 +59,7 @@ defmodule PaperTrail.VersionQueries do
   Gets the last version of a record given its module reference and its id.
   """
   @spec get_version(model :: module, id :: any) :: Ecto.Query.t()
-  def get_version(model, id) when is_atom(model) and is_integer(id),
+  def get_version(model, id) when is_atom(model) and not is_list(id),
     do: get_version(model, id, [])
 
   @doc """

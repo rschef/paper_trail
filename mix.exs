@@ -15,7 +15,7 @@ defmodule PaperTrail.Mixfile do
       dialyzer: [
         plt_core_path: "priv/plts/",
         plt_add_apps: [:mix, :ecto_sql]
-      ],
+      ]
     ]
   end
 

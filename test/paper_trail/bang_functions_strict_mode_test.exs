@@ -1031,5 +1031,4 @@ defmodule PaperTrailTest.StrictModeBangFunctions do
   defp convert_to_string_map(map) do
     map |> Jason.encode!() |> Jason.decode!()
   end
-
 end

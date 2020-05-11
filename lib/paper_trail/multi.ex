@@ -6,6 +6,9 @@ defmodule PaperTrail.Multi do
   alias PaperTrail.RepoClient
   alias PaperTrail.Serializer
 
+  @default_model_key :model
+  @default_version_key :version
+
   defdelegate new(), to: Ecto.Multi
   defdelegate append(lhs, rhs), to: Ecto.Multi
   defdelegate error(multi, name, value), to: Ecto.Multi
@@ -23,11 +26,9 @@ defmodule PaperTrail.Multi do
   defdelegate get_item_type(data), to: Serializer
   defdelegate get_model_id(model), to: Serializer
 
-  def insert(%Ecto.Multi{} = multi, changeset, options \\ [
-    origin: nil, meta: nil, originator: nil, prefix: nil, model_key: :model, version_key: :version
-  ]) do
-    model_key = options[:model_key] || :model
-    version_key = options[:version_key] || :version
+  def insert(%Ecto.Multi{} = multi, changeset, options \\ []) do
+    model_key = get_model_key(options)
+    version_key = get_version_key(options)
 
     case RepoClient.strict_mode(options) do
       true ->
@@ -56,7 +57,11 @@ defmodule PaperTrail.Multi do
 
           repo.insert(updated_changeset)
         end)
-        |> Ecto.Multi.run(version_key, fn repo, %{initial_version: initial_version, model: model} ->
+        |> Ecto.Multi.run(version_key, fn repo,
+                                          %{
+                                            :initial_version => initial_version,
+                                            ^model_key => model
+                                          } ->
           target_version = make_version_struct(%{event: "insert"}, model, options) |> serialize()
 
           Version.changeset(initial_version, target_version) |> repo.update
@@ -75,8 +80,11 @@ defmodule PaperTrail.Multi do
   def update(
         %Ecto.Multi{} = multi,
         changeset,
-        options \\ [origin: nil, meta: nil, originator: nil, prefix: nil]
+        options \\ []
       ) do
+    model_key = get_model_key(options)
+    version_key = get_version_key(options)
+
     case RepoClient.strict_mode(options) do
       true ->
         multi
@@ -91,11 +99,11 @@ defmodule PaperTrail.Multi do
           target_version = make_version_struct(%{event: "update"}, target_changeset, options)
           repo.insert(target_version)
         end)
-        |> Ecto.Multi.run(:model, fn repo, %{initial_version: initial_version} ->
+        |> Ecto.Multi.run(model_key, fn repo, %{initial_version: initial_version} ->
           updated_changeset = changeset |> change(%{current_version_id: initial_version.id})
           repo.update(updated_changeset)
         end)
-        |> Ecto.Multi.run(:version, fn repo, %{initial_version: initial_version} ->
+        |> Ecto.Multi.run(version_key, fn repo, %{initial_version: initial_version} ->
           new_item_changes =
             initial_version.item_changes
             |> Map.merge(%{
@@ -107,8 +115,8 @@ defmodule PaperTrail.Multi do
 
       _ ->
         multi
-        |> Ecto.Multi.update(:model, changeset)
-        |> Ecto.Multi.run(:version, fn repo, %{model: _model} ->
+        |> Ecto.Multi.update(model_key, changeset)
+        |> Ecto.Multi.run(version_key, fn repo, _changes ->
           version = make_version_struct(%{event: "update"}, changeset, options)
           repo.insert(version)
         end)
@@ -118,17 +126,21 @@ defmodule PaperTrail.Multi do
   def delete(
         %Ecto.Multi{} = multi,
         struct,
-        options \\ [origin: nil, meta: nil, originator: nil, prefix: nil]
+        options \\ []
       ) do
+    model_key = get_model_key(options)
+    version_key = get_version_key(options)
+
     multi
-    |> Ecto.Multi.delete(:model, struct, options)
-    |> Ecto.Multi.run(:version, fn repo, %{} ->
+    |> Ecto.Multi.delete(model_key, struct, options)
+    |> Ecto.Multi.run(version_key, fn repo, %{} ->
       version = make_version_struct(%{event: "delete"}, struct, options)
       repo.insert(version, options)
     end)
   end
 
   def commit(%Ecto.Multi{} = multi, options \\ []) do
+    model_key = get_model_key(options)
     repo = RepoClient.repo(options)
 
     transaction = repo.transaction(multi)
@@ -136,21 +148,35 @@ defmodule PaperTrail.Multi do
     case RepoClient.strict_mode(options) do
       true ->
         case transaction do
-          {:error, :model, changeset, %{}} ->
+          {:error, ^model_key, changeset, %{}} ->
             filtered_changes =
               Map.drop(changeset.changes, [:current_version_id, :first_version_id])
 
             {:error, Map.merge(changeset, %{repo: repo, changes: filtered_changes})}
 
           {:ok, map} ->
-            {:ok, Map.drop(map, [:initial_version])}
+            {:ok, map |> Map.drop([:initial_version]) |> return_operation(options)}
         end
 
       _ ->
         case transaction do
-          {:error, :model, changeset, %{}} -> {:error, Map.merge(changeset, %{repo: repo})}
-          _ -> transaction
+          {:error, ^model_key, changeset, %{}} -> {:error, Map.merge(changeset, %{repo: repo})}
+          {:ok, result} -> {:ok, return_operation(result, options)}
         end
+    end
+  end
+
+  @spec get_model_key(Keyword.t()) :: PaperTrail.multi_name()
+  defp get_model_key(options), do: options[:model_key] || @default_model_key
+
+  @spec get_version_key(Keyword.t()) :: PaperTrail.multi_name()
+  defp get_version_key(options), do: options[:version_key] || @default_version_key
+
+  @spec return_operation(map, Keyword.t()) :: any
+  defp return_operation(result, options) do
+    case RepoClient.return_operation(options) do
+      nil -> result
+      operation -> Map.fetch!(result, operation)
     end
   end
 end
