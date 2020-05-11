@@ -149,7 +149,7 @@ defmodule PaperTrail do
       end
 
       @spec merge_options(keyword) :: keyword
-      defp merge_options(options), do: Keyword.merge(unquote(client_options), options)
+      def merge_options(options), do: Keyword.merge(unquote(client_options), options)
     end
   end
 
