@@ -12,7 +12,7 @@ defmodule PaperTrail.Serializer do
       event: "insert",
       item_type: get_item_type(model),
       item_id: get_model_id(model),
-      item_changes: serialize(model),
+      item_changes: serialize(model, options),
       originator_id:
         case originator_ref do
           nil -> nil
@@ -32,7 +32,7 @@ defmodule PaperTrail.Serializer do
       event: "update",
       item_type: get_item_type(changeset),
       item_id: get_model_id(changeset),
-      item_changes: serialize_changes(changeset),
+      item_changes: serialize_changes(changeset, options),
       originator_id:
         case originator_ref do
           nil -> nil
@@ -52,7 +52,7 @@ defmodule PaperTrail.Serializer do
       event: "delete",
       item_type: get_item_type(model_or_changeset),
       item_id: get_model_id(model_or_changeset),
-      item_changes: serialize(model_or_changeset),
+      item_changes: serialize(model_or_changeset, options),
       originator_id:
         case originator_ref do
           nil -> nil
@@ -112,14 +112,48 @@ defmodule PaperTrail.Serializer do
     |> List.first()
   end
 
-  def serialize(nil), do: nil
-  def serialize(%Ecto.Changeset{data: data}), do: serialize(data)
-  def serialize(%_schema{} = model), do: Ecto.embedded_dump(model, :json)
+  def serialize(nil, _options), do: nil
 
-  def serialize_changes(%Ecto.Changeset{data: %schema{}, changes: changes}) do
+  def serialize(%Ecto.Changeset{data: data}, options), do: serialize(data, options)
+
+  def serialize(%schema{} = model, options) do
+    dumper = schema.__schema__(:dump)
+    fields = schema.__schema__(:fields)
+    repo = RepoClient.repo(options)
+    {adapter, _adapter_meta} = Ecto.Repo.Registry.lookup(repo.get_dynamic_repo())
+    changes = model |> Map.from_struct() |> Map.take(fields)
+
+    schema
+    |> dump_fields!(changes, dumper, adapter)
+    |> Map.new()
+  end
+
+  defp dump_fields!(schema, changes, dumper, adapter) do
+    for {field, value} <- changes do
+      {alias, type} = Map.fetch!(dumper, field)
+      {alias, dump_field!(schema, field, type, value, adapter)}
+    end
+  end
+
+  defp dump_field!(_schema, _field, :binary_id, value, _adapter) when is_binary(value),
+    do: value
+
+  defp dump_field!(schema, field, type, value, adapter) do
+    case Ecto.Type.adapter_dump(adapter, type, value) do
+      {:ok, value} ->
+        value
+
+      :error ->
+        raise Ecto.ChangeError,
+              "value `#{inspect(value)}` for `#{inspect(schema)}.#{field}` " <>
+                "does not match type #{inspect(type)}"
+    end
+  end
+
+  def serialize_changes(%Ecto.Changeset{data: %schema{}, changes: changes}, options) do
     changes
     |> schema.__struct__()
-    |> serialize()
+    |> serialize(options)
     |> Map.take(Map.keys(changes))
   end
 

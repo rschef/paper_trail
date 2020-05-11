@@ -17,7 +17,6 @@ defmodule PaperTrailTest.Version do
   @invalid_attrs %{}
 
   defdelegate repo, to: RepoClient
-  defdelegate serialize(data), to: Serializer
 
   setup_all do
     Application.put_env(:paper_trail, :strict_mode, false)
@@ -171,4 +170,6 @@ defmodule PaperTrailTest.Version do
     )
     |> elem(1)
   end
+
+  defp serialize(data), do: Serializer.serialize(data, repo: PaperTrail.Repo)
 end

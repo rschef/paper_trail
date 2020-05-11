@@ -28,8 +28,6 @@ defmodule PaperTrailTest do
       strict_mode: false
   end
 
-  defdelegate serialize(data), to: Serializer
-
   doctest PaperTrail
 
   setup_all do
@@ -653,4 +651,6 @@ defmodule PaperTrailTest do
   defp update_company_with_version(company, params \\ @update_company_params, options \\ []) do
     Company.changeset(company, params) |> CustomPaperTrail.update(options)
   end
+
+  defp serialize(data), do: Serializer.serialize(data, repo: PaperTrail.Repo)
 end

@@ -7,9 +7,6 @@ defmodule LocationType do
   def type, do: :map
 
   @impl true
-  def embed_as(_format), do: :dump
-
-  @impl true
   def cast(%__MODULE__{} = location), do: {:ok, location}
   def cast(%{} = data), do: {:ok, struct!(__MODULE__, data)}
   def cast(_), do: :error

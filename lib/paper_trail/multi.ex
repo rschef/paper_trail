@@ -32,7 +32,7 @@ defmodule PaperTrail.Multi do
   defdelegate make_version_struct(version, model, options), to: Serializer
   defdelegate make_version_structs(version, queryable, changes, options), to: Serializer
   defdelegate get_sequence_from_model(changeset, options \\ []), to: Serializer
-  defdelegate serialize(data), to: Serializer
+  defdelegate serialize(data, options), to: Serializer
   defdelegate get_sequence_id(table_name, options \\ []), to: Serializer
   defdelegate add_prefix(changeset, prefix), to: Serializer
   defdelegate get_item_type(data), to: Serializer
@@ -75,7 +75,8 @@ defmodule PaperTrail.Multi do
                                             :initial_version => initial_version,
                                             ^model_key => model
                                           } ->
-          target_version = make_version_struct(%{event: "insert"}, model, options) |> serialize()
+          target_version =
+            make_version_struct(%{event: "insert"}, model, options) |> serialize(options)
 
           Version.changeset(initial_version, target_version) |> repo.update
         end)

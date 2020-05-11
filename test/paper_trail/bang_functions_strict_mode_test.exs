@@ -18,7 +18,6 @@ defmodule PaperTrailTest.StrictModeBangFunctions do
   }
 
   defdelegate repo, to: RepoClient
-  defdelegate serialize(data), to: Serializer
 
   doctest PaperTrail
 
@@ -1031,4 +1030,6 @@ defmodule PaperTrailTest.StrictModeBangFunctions do
   defp convert_to_string_map(map) do
     map |> Jason.encode!() |> Jason.decode!()
   end
+
+  defp serialize(data), do: Serializer.serialize(data, repo: PaperTrail.Repo)
 end

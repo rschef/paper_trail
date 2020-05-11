@@ -162,7 +162,7 @@ defmodule PaperTrail do
   defdelegate get_current_model(version, options \\ []), to: VersionQueries
   defdelegate make_version_struct(version, model, options), to: Serializer
   defdelegate get_sequence_from_model(changeset, options \\ []), to: Serializer
-  defdelegate serialize(data), to: Serializer
+  defdelegate serialize(data, options), to: Serializer
   defdelegate get_sequence_id(table_name, options \\ []), to: Serializer
   defdelegate add_prefix(changeset, prefix), to: Serializer
   defdelegate get_item_type(data), to: Serializer
@@ -210,7 +210,10 @@ defmodule PaperTrail do
             })
 
           model = repo.insert!(updated_changeset)
-          target_version = make_version_struct(%{event: "insert"}, model, options) |> serialize()
+
+          target_version =
+            make_version_struct(%{event: "insert"}, model, options) |> serialize(options)
+
           Version.changeset(initial_version, target_version) |> repo.update!
           model
 
