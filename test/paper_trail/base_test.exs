@@ -607,6 +607,41 @@ defmodule PaperTrailTest do
     assert delete_version.id == Version |> last(:id) |> @repo.one |> Map.get(:id)
   end
 
+  test "update_all updates persons and creates versions with correct attributes" do
+    user1 = create_user()
+    %{id: user2_id} = user2 = create_user()
+    %{id: user3_id} = user3 = create_user()
+    ids = [user2.id, user3.id]
+    new_username = "isaac"
+
+    assert user1.username !== new_username
+    assert user2.username !== new_username
+    assert user3.username !== new_username
+
+    %{model: {2, nil}, version: {2, nil}} =
+      User
+      |> where([p], p.id in ^ids)
+      |> CustomPaperTrail.update_all(set: [username: new_username])
+
+    assert @repo.get(User, user1.id).username === user1.username
+    assert @repo.get(User, user2.id).username === new_username
+    assert @repo.get(User, user3.id).username === new_username
+
+    assert [
+             %PaperTrail.Version{
+               item_id: ^user2_id,
+               item_changes: %{"username" => ^new_username}
+             }
+           ] = PaperTrail.VersionQueries.get_versions(User, user2.id)
+
+    assert [
+             %PaperTrail.Version{
+               item_id: ^user3_id,
+               item_changes: %{"username" => ^new_username}
+             }
+           ] = PaperTrail.VersionQueries.get_versions(User, user3.id)
+  end
+
   defp create_user do
     User.changeset(%User{}, %{token: "fake-token", username: "izelnakri"}) |> @repo.insert!
   end

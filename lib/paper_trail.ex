@@ -14,6 +14,8 @@ defmodule PaperTrail do
   @type originator :: Ecto.Schema.t() | nil
   @type prefix :: String.t() | nil
   @type multi_name :: Ecto.Multi.name() | nil
+  @type queryable :: Ecto.Queryable.t()
+  @type updates :: Keyword.t()
 
   @type options ::
           []
@@ -30,11 +32,13 @@ defmodule PaperTrail do
             ]
 
   @type result :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
+  @type all_result :: {integer, nil | [any]}
 
   @callback insert(Ecto.Changeset.t(), options) :: result
   @callback insert!(Ecto.Changeset.t(), options) :: Ecto.Schema.t()
   @callback update(Ecto.Changeset.t(), options) :: result
   @callback update!(Ecto.Changeset.t(), options) :: Ecto.Schema.t()
+  @callback update_all(queryable, updates, options) :: all_result
   @callback delete(Ecto.Changeset.t(), options) :: result
   @callback delete!(Ecto.Changeset.t(), options) :: Ecto.Schema.t()
 
@@ -82,6 +86,11 @@ defmodule PaperTrail do
       @impl true
       def update!(changeset, options \\ []) do
         PaperTrail.update!(changeset, merge_options(options))
+      end
+
+      @impl true
+      def update_all(queryable, updates, options \\ []) do
+        PaperTrail.update_all(queryable, updates, merge_options(options))
       end
 
       @impl true
@@ -262,6 +271,17 @@ defmodule PaperTrail do
           model
       end
     end)
+    |> elem(1)
+  end
+
+  @doc """
+  Updates all records from the database with a related version insertion in one transaction
+  """
+  @spec update_all(queryable, updates, options) :: all_result
+  def update_all(queryable, updates, options \\ []) do
+    Multi.new()
+    |> Multi.update_all(queryable, updates, options)
+    |> Multi.commit(options)
     |> elem(1)
   end
 

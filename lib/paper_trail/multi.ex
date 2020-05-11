@@ -9,12 +9,13 @@ defmodule PaperTrail.Multi do
   @type multi :: Ecto.Multi.t()
   @type changeset :: Ecto.Changeset.t()
   @type options :: PaperTrail.options()
-  @type queryable :: Ecto.Queryable.t()
+  @type queryable :: PaperTrail.queryable()
+  @type updates :: PaperTrail.updates()
   @type struct_or_changeset :: Ecto.Schema.t() | Ecto.Changeset.t()
   @type result ::
-    {:ok, any()}
-    | {:error, any()}
-    | {:error, Ecto.Multi.name(), any(), %{required(Ecto.Multi.name()) => any()}}
+          {:ok, any()}
+          | {:error, any()}
+          | {:error, Ecto.Multi.name(), any(), %{required(Ecto.Multi.name()) => any()}}
 
   @default_model_key :model
   @default_version_key :version
@@ -29,6 +30,7 @@ defmodule PaperTrail.Multi do
   defdelegate run(multi, name, mod, fun, args), to: Ecto.Multi
   defdelegate to_list(multi), to: Ecto.Multi
   defdelegate make_version_struct(version, model, options), to: Serializer
+  defdelegate make_version_structs(version, queryable, changes, options), to: Serializer
   defdelegate get_sequence_from_model(changeset, options \\ []), to: Serializer
   defdelegate serialize(data), to: Serializer
   defdelegate get_sequence_id(table_name, options \\ []), to: Serializer
@@ -132,6 +134,28 @@ defmodule PaperTrail.Multi do
           version = make_version_struct(%{event: "update"}, changeset, options)
           repo.insert(version)
         end)
+    end
+  end
+
+  @spec update_all(multi, queryable, updates, options) :: multi
+  def update_all(
+        %Ecto.Multi{} = multi,
+        queryable,
+        [set: changes] = updates,
+        options \\ []
+      ) do
+    model_key = get_model_key(options)
+    version_key = get_version_key(options)
+    entries = make_version_structs(%{event: "update"}, queryable, changes, options)
+
+    case RepoClient.strict_mode(options) do
+      true ->
+        raise "Strict mode not implemented for update_all"
+
+      _ ->
+        multi
+        |> Ecto.Multi.update_all(model_key, queryable, updates)
+        |> Ecto.Multi.insert_all(version_key, Version, entries)
     end
   end
 

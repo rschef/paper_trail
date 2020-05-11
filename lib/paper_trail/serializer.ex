@@ -1,4 +1,6 @@
 defmodule PaperTrail.Serializer do
+  import Ecto.Query
+
   alias PaperTrail.RepoClient
   alias PaperTrail.Version
 
@@ -60,6 +62,35 @@ defmodule PaperTrail.Serializer do
       meta: options[:meta]
     }
     |> add_prefix(options[:prefix])
+  end
+
+  @spec make_version_structs(map, PaperTrail.queryable(), Keyword.t() | map, PaperTrail.options()) ::
+          [map]
+  def make_version_structs(%{event: "update"}, queryable, changes, options) do
+    {_table, schema} = queryable.from.source
+    item_type = schema |> struct() |> get_item_type()
+    changes_map = Map.new(changes)
+    originator = RepoClient.originator()
+    originator_ref = options[originator[:name]] || options[:originator]
+    originator_id = if(originator_ref, do: originator_ref.id, else: nil)
+    origin = options[:origin]
+    meta = options[:meta]
+    repo = RepoClient.repo(options)
+
+    repo.all(
+      from(q in queryable,
+        select: %{
+          event: "update",
+          item_type: ^item_type,
+          item_id: q.id,
+          item_changes: type(^changes_map, :map),
+          originator_id: ^originator_id,
+          origin: ^origin,
+          meta: type(^meta, :map),
+          inserted_at: type(fragment("CURRENT_TIMESTAMP"), :naive_datetime)
+        }
+      )
+    )
   end
 
   def get_sequence_from_model(changeset, options \\ []) do
