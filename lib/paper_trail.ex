@@ -69,37 +69,37 @@ defmodule PaperTrail do
       @behaviour PaperTrail
 
       @impl true
-      def insert(changeset, options \\ []) do
+      def insert(changeset, options \\ []) when is_list(options) do
         PaperTrail.insert(changeset, merge_options(options))
       end
 
       @impl true
-      def insert!(changeset, options \\ []) do
+      def insert!(changeset, options \\ []) when is_list(options) do
         PaperTrail.insert!(changeset, merge_options(options))
       end
 
       @impl true
-      def update(changeset, options \\ []) do
+      def update(changeset, options \\ []) when is_list(options) do
         PaperTrail.update(changeset, merge_options(options))
       end
 
       @impl true
-      def update!(changeset, options \\ []) do
+      def update!(changeset, options \\ []) when is_list(options) do
         PaperTrail.update!(changeset, merge_options(options))
       end
 
       @impl true
-      def update_all(queryable, updates, options \\ []) do
+      def update_all(queryable, updates, options \\ []) when is_list(options) do
         PaperTrail.update_all(queryable, updates, merge_options(options))
       end
 
       @impl true
-      def delete(struct, options \\ []) do
+      def delete(struct, options \\ []) when is_list(options) do
         PaperTrail.delete(struct, merge_options(options))
       end
 
       @impl true
-      def delete!(struct, options \\ []) do
+      def delete!(struct, options \\ []) when is_list(options) do
         PaperTrail.delete!(struct, merge_options(options))
       end
 
@@ -119,7 +119,7 @@ defmodule PaperTrail do
       end
 
       @impl true
-      def get_version(model, id, options) do
+      def get_version(model, id, options) when is_list(options) do
         VersionQueries.get_version(model, id, merge_options(options))
       end
 
@@ -139,7 +139,7 @@ defmodule PaperTrail do
       end
 
       @impl true
-      def get_versions(model, id, options) do
+      def get_versions(model, id, options) when is_list(options) do
         VersionQueries.get_versions(model, id, merge_options(options))
       end
 
