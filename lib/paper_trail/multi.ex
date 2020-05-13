@@ -6,6 +6,17 @@ defmodule PaperTrail.Multi do
   alias PaperTrail.RepoClient
   alias PaperTrail.Serializer
 
+  @type multi :: Ecto.Multi.t()
+  @type changeset :: Ecto.Changeset.t()
+  @type options :: PaperTrail.options()
+  @type queryable :: PaperTrail.queryable()
+  @type updates :: PaperTrail.updates()
+  @type struct_or_changeset :: Ecto.Schema.t() | Ecto.Changeset.t()
+  @type result ::
+          {:ok, any()}
+          | {:error, any()}
+          | {:error, Ecto.Multi.name(), any(), %{required(Ecto.Multi.name()) => any()}}
+
   @default_model_key :model
   @default_version_key :version
 
@@ -19,13 +30,15 @@ defmodule PaperTrail.Multi do
   defdelegate run(multi, name, mod, fun, args), to: Ecto.Multi
   defdelegate to_list(multi), to: Ecto.Multi
   defdelegate make_version_struct(version, model, options), to: Serializer
+  defdelegate make_version_structs(version, queryable, changes, options), to: Serializer
   defdelegate get_sequence_from_model(changeset, options \\ []), to: Serializer
-  defdelegate serialize(data), to: Serializer
+  defdelegate serialize(data, options), to: Serializer
   defdelegate get_sequence_id(table_name, options \\ []), to: Serializer
   defdelegate add_prefix(changeset, prefix), to: Serializer
   defdelegate get_item_type(data), to: Serializer
   defdelegate get_model_id(model), to: Serializer
 
+  @spec insert(multi, changeset, options) :: multi
   def insert(%Ecto.Multi{} = multi, changeset, options \\ []) do
     model_key = get_model_key(options)
     version_key = get_version_key(options)
@@ -62,7 +75,8 @@ defmodule PaperTrail.Multi do
                                             :initial_version => initial_version,
                                             ^model_key => model
                                           } ->
-          target_version = make_version_struct(%{event: "insert"}, model, options) |> serialize()
+          target_version =
+            make_version_struct(%{event: "insert"}, model, options) |> serialize(options)
 
           Version.changeset(initial_version, target_version) |> repo.update
         end)
@@ -77,6 +91,7 @@ defmodule PaperTrail.Multi do
     end
   end
 
+  @spec update(multi, changeset, options) :: multi
   def update(
         %Ecto.Multi{} = multi,
         changeset,
@@ -123,22 +138,46 @@ defmodule PaperTrail.Multi do
     end
   end
 
+  @spec update_all(multi, queryable, updates, options) :: multi
+  def update_all(
+        %Ecto.Multi{} = multi,
+        queryable,
+        [set: changes] = updates,
+        options \\ []
+      ) do
+    model_key = get_model_key(options)
+    version_key = get_version_key(options)
+    entries = make_version_structs(%{event: "update"}, queryable, changes, options)
+
+    case RepoClient.strict_mode(options) do
+      true ->
+        raise "Strict mode not implemented for update_all"
+
+      _ ->
+        multi
+        |> Ecto.Multi.update_all(model_key, queryable, updates)
+        |> Ecto.Multi.insert_all(version_key, Version, entries)
+    end
+  end
+
+  @spec delete(multi, struct_or_changeset, options) :: multi
   def delete(
         %Ecto.Multi{} = multi,
-        struct,
+        struct_or_changeset,
         options \\ []
       ) do
     model_key = get_model_key(options)
     version_key = get_version_key(options)
 
     multi
-    |> Ecto.Multi.delete(model_key, struct, options)
+    |> Ecto.Multi.delete(model_key, struct_or_changeset, options)
     |> Ecto.Multi.run(version_key, fn repo, %{} ->
-      version = make_version_struct(%{event: "delete"}, struct, options)
+      version = make_version_struct(%{event: "delete"}, struct_or_changeset, options)
       repo.insert(version, options)
     end)
   end
 
+  @spec commit(multi, options) :: result
   def commit(%Ecto.Multi{} = multi, options \\ []) do
     model_key = get_model_key(options)
     repo = RepoClient.repo(options)

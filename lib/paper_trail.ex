@@ -14,6 +14,8 @@ defmodule PaperTrail do
   @type originator :: Ecto.Schema.t() | nil
   @type prefix :: String.t() | nil
   @type multi_name :: Ecto.Multi.name() | nil
+  @type queryable :: Ecto.Queryable.t()
+  @type updates :: Keyword.t()
 
   @type options ::
           []
@@ -30,11 +32,13 @@ defmodule PaperTrail do
             ]
 
   @type result :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
+  @type all_result :: {integer, nil | [any]}
 
   @callback insert(Ecto.Changeset.t(), options) :: result
   @callback insert!(Ecto.Changeset.t(), options) :: Ecto.Schema.t()
   @callback update(Ecto.Changeset.t(), options) :: result
   @callback update!(Ecto.Changeset.t(), options) :: Ecto.Schema.t()
+  @callback update_all(queryable, updates, options) :: all_result
   @callback delete(Ecto.Changeset.t(), options) :: result
   @callback delete!(Ecto.Changeset.t(), options) :: Ecto.Schema.t()
 
@@ -65,32 +69,37 @@ defmodule PaperTrail do
       @behaviour PaperTrail
 
       @impl true
-      def insert(changeset, options \\ []) do
+      def insert(changeset, options \\ []) when is_list(options) do
         PaperTrail.insert(changeset, merge_options(options))
       end
 
       @impl true
-      def insert!(changeset, options \\ []) do
+      def insert!(changeset, options \\ []) when is_list(options) do
         PaperTrail.insert!(changeset, merge_options(options))
       end
 
       @impl true
-      def update(changeset, options \\ []) do
+      def update(changeset, options \\ []) when is_list(options) do
         PaperTrail.update(changeset, merge_options(options))
       end
 
       @impl true
-      def update!(changeset, options \\ []) do
+      def update!(changeset, options \\ []) when is_list(options) do
         PaperTrail.update!(changeset, merge_options(options))
       end
 
       @impl true
-      def delete(struct, options \\ []) do
+      def update_all(queryable, updates, options \\ []) when is_list(options) do
+        PaperTrail.update_all(queryable, updates, merge_options(options))
+      end
+
+      @impl true
+      def delete(struct, options \\ []) when is_list(options) do
         PaperTrail.delete(struct, merge_options(options))
       end
 
       @impl true
-      def delete!(struct, options \\ []) do
+      def delete!(struct, options \\ []) when is_list(options) do
         PaperTrail.delete!(struct, merge_options(options))
       end
 
@@ -110,7 +119,7 @@ defmodule PaperTrail do
       end
 
       @impl true
-      def get_version(model, id, options) do
+      def get_version(model, id, options) when is_list(options) do
         VersionQueries.get_version(model, id, merge_options(options))
       end
 
@@ -130,7 +139,7 @@ defmodule PaperTrail do
       end
 
       @impl true
-      def get_versions(model, id, options) do
+      def get_versions(model, id, options) when is_list(options) do
         VersionQueries.get_versions(model, id, merge_options(options))
       end
 
@@ -140,7 +149,7 @@ defmodule PaperTrail do
       end
 
       @spec merge_options(keyword) :: keyword
-      defp merge_options(options), do: Keyword.merge(unquote(client_options), options)
+      def merge_options(options), do: Keyword.merge(unquote(client_options), options)
     end
   end
 
@@ -153,7 +162,7 @@ defmodule PaperTrail do
   defdelegate get_current_model(version, options \\ []), to: VersionQueries
   defdelegate make_version_struct(version, model, options), to: Serializer
   defdelegate get_sequence_from_model(changeset, options \\ []), to: Serializer
-  defdelegate serialize(data), to: Serializer
+  defdelegate serialize(data, options), to: Serializer
   defdelegate get_sequence_id(table_name, options \\ []), to: Serializer
   defdelegate add_prefix(changeset, prefix), to: Serializer
   defdelegate get_item_type(data), to: Serializer
@@ -201,7 +210,10 @@ defmodule PaperTrail do
             })
 
           model = repo.insert!(updated_changeset)
-          target_version = make_version_struct(%{event: "insert"}, model, options) |> serialize()
+
+          target_version =
+            make_version_struct(%{event: "insert"}, model, options) |> serialize(options)
+
           Version.changeset(initial_version, target_version) |> repo.update!
           model
 
@@ -262,6 +274,17 @@ defmodule PaperTrail do
           model
       end
     end)
+    |> elem(1)
+  end
+
+  @doc """
+  Updates all records from the database with a related version insertion in one transaction
+  """
+  @spec update_all(queryable, updates, options) :: all_result
+  def update_all(queryable, updates, options \\ []) do
+    Multi.new()
+    |> Multi.update_all(queryable, updates, options)
+    |> Multi.commit(options)
     |> elem(1)
   end
 

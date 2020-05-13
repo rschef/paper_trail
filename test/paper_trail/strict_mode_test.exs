@@ -17,8 +17,6 @@ defmodule PaperTrailStrictModeTest do
     facebook: "acme.llc"
   }
 
-  defdelegate serialize(data), to: Serializer
-
   doctest PaperTrail
 
   setup_all do
@@ -487,4 +485,6 @@ defmodule PaperTrailStrictModeTest do
   defp update_company_with_version(company, params \\ @update_company_params, options \\ []) do
     Company.changeset(company, params) |> PaperTrail.update(options)
   end
+
+  defp serialize(data), do: Serializer.serialize(data, repo: @repo)
 end
