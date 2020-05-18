@@ -65,6 +65,14 @@ defmodule PaperTrailTest.UUIDTest do
 
       version = Version |> last |> repo().one
       assert version.item_id == item.item_id
+
+      uuid_item =
+        %UUIDItem{}
+        |> UUIDItem.changeset(%{title: "hello"})
+        |> PaperTrail.insert!()
+
+      version = Version |> last |> repo().one
+      assert version.item_id == uuid_item.item_id
     end
 
     test "test INTEGER primary key for item_type == :string" do

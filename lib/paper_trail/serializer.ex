@@ -4,6 +4,10 @@ defmodule PaperTrail.Serializer do
   alias PaperTrail.RepoClient
   alias PaperTrail.Version
 
+  @type options :: PaperTrail.options()
+
+  @default_ignored_ecto_types [Ecto.UUID, :binary_id, :binary]
+
   def make_version_struct(%{event: "insert"}, model, options) do
     originator = RepoClient.originator()
     originator_ref = options[originator[:name]] || options[:originator]
@@ -113,6 +117,7 @@ defmodule PaperTrail.Serializer do
     |> List.first()
   end
 
+  @spec serialize(nil | Ecto.Changeset.t() | struct, options) :: nil | map
   def serialize(nil, _options), do: nil
 
   def serialize(%Ecto.Changeset{data: data}, options), do: serialize(data, options)
@@ -129,19 +134,25 @@ defmodule PaperTrail.Serializer do
     |> Map.new()
   end
 
+  @spec dump_fields!(module, map, module, module) :: Keyword.t()
   defp dump_fields!(schema, changes, dumper, adapter) do
     for {field, value} <- changes do
       {alias, type} = Map.fetch!(dumper, field)
-      {alias, dump_field!(schema, field, type, value, adapter)}
+
+      dumped_value =
+        if(
+          type in ignored_ecto_types(),
+          do: value,
+          else: dump_field!(schema, field, type, value, adapter)
+        )
+
+      {alias, dumped_value}
     end
   end
 
+  @spec dump_field!(module, atom, atom, any, module) :: any
   defp dump_field!(schema, field, type, value, adapter) do
     case Ecto.Type.adapter_dump(adapter, type, value) do
-      {:ok, <<_::128>> = binary} ->
-        {:ok, string} = Ecto.UUID.load(binary)
-        string
-
       {:ok, value} ->
         value
 
@@ -178,4 +189,15 @@ defmodule PaperTrail.Serializer do
         "#{model_id}"
     end
   end
+
+  @spec ignored_ecto_types :: [atom]
+  defp ignored_ecto_types do
+    :not_dumped_ecto_types
+    |> get_env([])
+    |> Kernel.++(@default_ignored_ecto_types)
+    |> Enum.uniq()
+  end
+
+  @spec get_env(atom, any) :: any
+  defp get_env(key, default), do: Application.get_env(:paper_trail, key, default)
 end
