@@ -162,6 +162,23 @@ config :paper_trail, item_type: Ecto.UUID,
 
 Remember to edit the types accordingly in the generated migration.
 
+#### Serialization and Ecto types
+
+Ecto uses the schema defined [Ecto types](https://hexdocs.pm/ecto/Ecto.Type.html) and the [Repo adapter](https://hexdocs.pm/ecto/Ecto.Adapter.html) dumpers to serialize data to primitive types, which are then inserted in the database by the adapter.
+
+In PaperTrail, all changes are stored in the `item_changes` field as a map, which will be later converted by the Repo adapter to an equivalent database type, such as json.
+
+Using the same approach as Ecto, PaperTrail serializes these changes using their respective Ecto type and `dump/1` callback. Nevertheless, it can cause issues later when the Repo adapter tries to convert the serialized map to json, since it's not possible to convert binary values to json.
+
+In order to avoid these issues, some Ecto types are ignored by default, as they dump binary values: `[Ecto.UUID, :binary_id, :binary]`
+
+You can also configure additional Ecto types to be ignored:
+
+```elixir
+config :paper_trail,
+  not_dumped_ecto_types: [MyCustomType]
+```
+
 ### Version origin references:
 PaperTrail records have a string field called ```origin```. ```PaperTrail.insert/2```, ```PaperTrail.update/2```, ```PaperTrail.delete/2``` functions accept a second argument to describe the origin of this version:
 ```elixir

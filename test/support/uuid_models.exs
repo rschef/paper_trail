@@ -53,6 +53,24 @@ defmodule Item do
   end
 end
 
+defmodule UUIDItem do
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  @primary_key {:item_id, Ecto.UUID, autogenerate: true}
+  schema "uuid_items" do
+    field(:title, :string)
+
+    timestamps()
+  end
+
+  def changeset(model, params \\ %{}) do
+    model
+    |> cast(params, [:title])
+    |> validate_required(:title)
+  end
+end
+
 defmodule FooItem do
   use Ecto.Schema
   import Ecto.Changeset

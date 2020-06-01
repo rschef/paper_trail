@@ -21,5 +21,12 @@ defmodule PaperTrail.UUIDRepo.Migrations.CreateItems do
 
       timestamps()
     end
+
+    create table(:uuid_items) do
+      add :item_id,      :uuid, null: false, primary_key: true
+      add :title,        :string, null: false
+
+      timestamps()
+    end
   end
 end
