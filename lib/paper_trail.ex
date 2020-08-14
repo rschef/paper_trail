@@ -28,7 +28,8 @@ defmodule PaperTrail do
               prefix: prefix,
               model_key: multi_name,
               version_key: multi_name,
-              return_operation: multi_name
+              return_operation: multi_name,
+              returning: boolean()
             ]
 
   @type result :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
