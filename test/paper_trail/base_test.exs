@@ -640,6 +640,23 @@ defmodule PaperTrailTest do
            ] = PaperTrail.VersionQueries.get_versions(User, user3.id)
   end
 
+  test "update_all with returning option returns inserted version" do
+    create_user()
+    %{id: user2_id} = create_user()
+    %{id: user3_id} = create_user()
+    ids = [user2_id, user3_id]
+    new_username = "isaac"
+
+    {2, [%PaperTrail.Version{item_id: ^user2_id}, %PaperTrail.Version{item_id: ^user3_id}]} =
+      User
+      |> where([p], p.id in ^ids)
+      |> CustomPaperTrail.update_all(
+        [set: [username: new_username]],
+        returning: true,
+        return_operation: :version
+      )
+  end
+
   defp create_user do
     User.changeset(%User{}, %{token: "fake-token", username: "izelnakri"}) |> @repo.insert!
   end

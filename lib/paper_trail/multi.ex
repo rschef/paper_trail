@@ -148,6 +148,7 @@ defmodule PaperTrail.Multi do
     model_key = get_model_key(options)
     version_key = get_version_key(options)
     entries = make_version_structs(%{event: "update"}, queryable, changes, options)
+    returning = !!options[:returning] && RepoClient.return_operation(options) == version_key
 
     case RepoClient.strict_mode(options) do
       true ->
@@ -156,7 +157,7 @@ defmodule PaperTrail.Multi do
       _ ->
         multi
         |> Ecto.Multi.update_all(model_key, queryable, updates)
-        |> Ecto.Multi.insert_all(version_key, Version, entries)
+        |> Ecto.Multi.insert_all(version_key, Version, entries, returning: returning)
     end
   end
 
