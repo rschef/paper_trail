@@ -13,13 +13,15 @@ defmodule PaperTrailTest do
     name: "Acme LLC",
     is_active: true,
     city: "Greenwich",
-    location: %{country: "Brazil"}
+    location: %{country: "Brazil"},
+    email_options: %{newsletter_enabled: false}
   }
   @update_company_params %{
     city: "Hong Kong",
     website: "http://www.acme.com",
     facebook: "acme.llc",
-    location: %{country: "Chile"}
+    location: %{country: "Chile"},
+    email_options: %{newsletter_enabled: true}
   }
 
   defmodule CustomPaperTrail do
@@ -73,7 +75,8 @@ defmodule PaperTrailTest do
              facebook: nil,
              twitter: nil,
              founded_in: nil,
-             location: %{country: "Brazil"}
+             location: %{country: "Brazil"},
+             email_options: %{newsletter_enabled: false}
            }
 
     assert Map.drop(version, [:id, :inserted_at]) == %{
@@ -141,7 +144,8 @@ defmodule PaperTrailTest do
              facebook: "acme.llc",
              twitter: nil,
              founded_in: nil,
-             location: %{country: "Chile"}
+             location: %{country: "Chile"},
+             email_options: %{newsletter_enabled: true}
            }
 
     assert Map.drop(version, [:id, :inserted_at]) == %{
@@ -152,7 +156,8 @@ defmodule PaperTrailTest do
                city: "Hong Kong",
                website: "http://www.acme.com",
                facebook: "acme.llc",
-               location: %{country: "Chile"}
+               location: %{country: "Chile"},
+               email_options: %{newsletter_enabled: true}
              },
              originator_id: user.id,
              origin: nil,
@@ -192,7 +197,8 @@ defmodule PaperTrailTest do
              facebook: "acme.llc",
              twitter: nil,
              founded_in: nil,
-             location: %{country: "Chile"}
+             location: %{country: "Chile"},
+             email_options: %{newsletter_enabled: true}
            }
 
     assert Map.drop(version, [:id, :inserted_at]) == %{
@@ -203,7 +209,8 @@ defmodule PaperTrailTest do
                city: "Hong Kong",
                website: "http://www.acme.com",
                facebook: "acme.llc",
-               location: %{country: "Chile"}
+               location: %{country: "Chile"},
+               email_options: %{newsletter_enabled: true}
              },
              originator_id: user.id,
              origin: nil,
@@ -263,7 +270,8 @@ defmodule PaperTrailTest do
              facebook: "acme.llc",
              twitter: nil,
              founded_in: nil,
-             location: %{country: "Chile"}
+             location: %{country: "Chile"},
+             email_options: %{newsletter_enabled: true}
            }
 
     assert Map.drop(version, [:id, :inserted_at]) == %{
@@ -282,7 +290,8 @@ defmodule PaperTrailTest do
                facebook: "acme.llc",
                twitter: nil,
                founded_in: nil,
-               location: %{country: "Chile"}
+               location: %{country: "Chile"},
+               email_options: %{newsletter_enabled: true}
              },
              originator_id: user.id,
              origin: nil,
@@ -320,7 +329,8 @@ defmodule PaperTrailTest do
              facebook: "acme.llc",
              twitter: nil,
              founded_in: nil,
-             location: %{country: "Chile"}
+             location: %{country: "Chile"},
+             email_options: %{newsletter_enabled: true}
            }
 
     assert Map.drop(version, [:id, :inserted_at]) == %{
@@ -339,7 +349,8 @@ defmodule PaperTrailTest do
                facebook: "acme.llc",
                twitter: nil,
                founded_in: nil,
-               location: %{country: "Chile"}
+               location: %{country: "Chile"},
+               email_options: %{newsletter_enabled: true}
              },
              originator_id: user.id,
              origin: nil,

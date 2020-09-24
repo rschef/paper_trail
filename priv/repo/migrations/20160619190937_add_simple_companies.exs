@@ -12,6 +12,7 @@ defmodule Repo.Migrations.CreateSimpleCompanies do
       add :twitter,    :string
       add :founded_in, :string
       add :location,   :map
+      add :email_options,   :map
 
       timestamps()
     end

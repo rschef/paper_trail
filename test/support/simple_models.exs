@@ -23,6 +23,19 @@ defmodule LocationType do
   def dump(_), do: :error
 end
 
+defmodule EmailOptions do
+  use Ecto.Schema
+
+  @primary_key false
+  embedded_schema do
+    field(:newsletter_enabled, :boolean)
+  end
+
+  def changeset(options, params) do
+    Ecto.Changeset.cast(options, params, [:newsletter_enabled])
+  end
+end
+
 defmodule SimpleCompany do
   use Ecto.Schema
 
@@ -41,6 +54,7 @@ defmodule SimpleCompany do
     field(:twitter, :string)
     field(:founded_in, :string)
     field(:location, LocationType)
+    embeds_one(:email_options, EmailOptions, on_replace: :update)
 
     has_many(:people, SimplePerson, foreign_key: :company_id)
 
@@ -62,6 +76,7 @@ defmodule SimpleCompany do
   def changeset(model, params \\ %{}) do
     model
     |> cast(params, @optional_fields)
+    |> cast_embed(:email_options, with: &EmailOptions.changeset/2)
     |> validate_required([:name])
     |> no_assoc_constraint(:people)
   end
