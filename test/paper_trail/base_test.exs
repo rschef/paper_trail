@@ -668,6 +668,116 @@ defmodule PaperTrailTest do
       )
   end
 
+  test "creating a person and associated company creates a person version with correct attributes" do
+    {:ok, result} =
+      Person.with_company_changeset(%Person{}, %{
+        first_name: "Izel",
+        last_name: "Nakri",
+        gender: true,
+        company: %{
+          name: "My company"
+        }
+      })
+      |> CustomPaperTrail.insert(origin: "admin", meta: %{linkname: "izelnakri"})
+
+    person_count = Person.count()
+    version_count = Version.count()
+
+    person = result[:model] |> serialize
+    company = result[:model].company |> serialize
+    version = result[:version] |> serialize
+
+    assert Map.keys(result) == [:model, :version]
+    assert person_count == 1
+    assert version_count == 1
+
+    Map.drop(person, [:id, :inserted_at, :updated_at])
+
+    assert Map.drop(person, [:id, :inserted_at, :updated_at]) == %{
+             first_name: "Izel",
+             last_name: "Nakri",
+             gender: true,
+             visit_count: nil,
+             birthdate: nil,
+             company_id: result[:model].company.id,
+             company: company
+           }
+
+    assert %{name: "My company"} = company
+
+    assert Map.drop(version, [:id, :inserted_at]) == %{
+             event: "insert",
+             item_type: "SimplePerson",
+             item_id: person.id,
+             item_changes: person,
+             originator_id: nil,
+             origin: "admin",
+             meta: %{linkname: "izelnakri"}
+           }
+  end
+
+  test "updating a person and associated company creates a person version with correct attributes" do
+    {:ok, insert_person_result} =
+      Person.with_company_changeset(%Person{}, %{
+        first_name: "Izel",
+        last_name: "Nakri",
+        gender: true,
+        company: %{
+          name: "My company"
+        }
+      })
+      |> CustomPaperTrail.insert(origin: "admin")
+
+    {:ok, result} =
+      Person.with_company_changeset(insert_person_result[:model], %{
+        first_name: "Isaac",
+        visit_count: 10,
+        birthdate: ~D[1992-04-01],
+        company: %{
+          name: "Other company"
+        }
+      })
+      |> CustomPaperTrail.update(origin: "scraper", meta: %{linkname: "izelnakri"})
+
+    assert insert_person_result[:model].company_id == result[:model].company_id
+
+    person_count = Person.count()
+    version_count = Version.count()
+
+    person = result[:model] |> serialize
+    company = result[:model].company |> serialize
+    version = result[:version] |> serialize
+
+    assert Map.keys(result) == [:model, :version]
+    assert person_count == 1
+    assert version_count == 2
+
+    assert Map.drop(person, [:id, :inserted_at, :updated_at]) == %{
+             first_name: "Isaac",
+             visit_count: 10,
+             birthdate: ~D[1992-04-01],
+             last_name: "Nakri",
+             gender: true,
+             company_id: result[:model].company.id,
+             company: company
+           }
+
+    assert Map.drop(version, [:id, :inserted_at]) == %{
+             event: "update",
+             item_type: "SimplePerson",
+             item_id: person.id,
+             item_changes: %{
+               first_name: "Isaac",
+               visit_count: 10,
+               birthdate: ~D[1992-04-01],
+               company: %{name: "Other company"}
+             },
+             originator_id: nil,
+             origin: "scraper",
+             meta: %{linkname: "izelnakri"}
+           }
+  end
+
   defp create_user do
     User.changeset(%User{}, %{token: "fake-token", username: "izelnakri"}) |> @repo.insert!
   end
