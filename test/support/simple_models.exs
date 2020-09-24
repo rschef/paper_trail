@@ -107,7 +107,7 @@ defmodule SimplePerson do
     field(:gender, :boolean)
     field(:birthdate, :date)
 
-    belongs_to(:company, SimpleCompany, foreign_key: :company_id)
+    belongs_to(:company, SimpleCompany, foreign_key: :company_id, on_replace: :update)
 
     timestamps()
   end
@@ -125,6 +125,12 @@ defmodule SimplePerson do
     model
     |> cast(params, @optional_fields)
     |> foreign_key_constraint(:company_id)
+  end
+
+  def with_company_changeset(model, params) do
+    model
+    |> cast(params, @optional_fields)
+    |> cast_assoc(:company, with: &SimpleCompany.changeset/2)
   end
 
   def count do

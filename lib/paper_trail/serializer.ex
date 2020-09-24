@@ -36,7 +36,7 @@ defmodule PaperTrail.Serializer do
       event: "update",
       item_type: get_item_type(changeset),
       item_id: get_model_id(changeset),
-      item_changes: serialize_changes(changeset, options),
+      item_changes: serialize(changeset, options, "update"),
       originator_id:
         case originator_ref do
           nil -> nil
@@ -117,45 +117,73 @@ defmodule PaperTrail.Serializer do
     |> List.first()
   end
 
-  @spec serialize(nil | Ecto.Changeset.t() | struct, options) :: nil | map
-  def serialize(nil, _options), do: nil
+  @spec serialize(nil | Ecto.Changeset.t() | struct, options, String.t()) :: nil | map
+  def serialize(model, options, event \\ "insert")
 
-  def serialize(%Ecto.Changeset{data: data}, options), do: serialize(data, options)
+  def serialize(nil, _options, _event), do: nil
 
-  def serialize(%schema{} = model, options) do
-    dumper = schema.__schema__(:dump)
-    fields = schema.__schema__(:fields)
+  def serialize(
+        %Ecto.Changeset{data: %schema{}, changes: changes},
+        options,
+        "update"
+      ) do
+    changes
+    |> schema.__struct__()
+    |> do_serialize(options, "update", Map.keys(changes))
+  end
+
+  def serialize(%Ecto.Changeset{data: data}, options, event) do
+    do_serialize(data, options, event)
+  end
+
+  def serialize(%_schema{} = model, options, event), do: do_serialize(model, options, event)
+
+  @spec do_serialize(struct, options, String.t(), [atom] | nil) :: map
+  def do_serialize(%schema{} = model, options, event, changed_fields \\ nil) do
+    fields = changed_fields || schema.__schema__(:fields)
     repo = RepoClient.repo(options)
     {adapter, _adapter_meta} = Ecto.Repo.Registry.lookup(repo.get_dynamic_repo())
     changes = model |> Map.from_struct() |> Map.take(fields)
+    associations = serialize_associations(model, options, event)
 
-    schema
-    |> dump_fields!(changes, dumper, adapter, options)
+    changes
+    |> Enum.map(&dump_field!(&1, schema, adapter, options, event))
+    |> Map.new()
+    |> Map.merge(associations)
+  end
+
+  @spec serialize_associations(struct, options, String.t()) :: map
+  defp serialize_associations(%schema{} = model, options, event) do
+    association_fields = schema.__schema__(:associations)
+
+    model
+    |> Map.take(association_fields)
+    |> Enum.filter(fn {_field, value} -> Ecto.assoc_loaded?(value) end)
+    |> Enum.map(fn {field, value} -> {field, serialize(value, options, event)} end)
     |> Map.new()
   end
 
-  @spec dump_fields!(module, map, module, module, options) :: Keyword.t()
-  defp dump_fields!(schema, changes, dumper, adapter, options) do
-    for {field, value} <- changes do
-      {alias, type} = Map.fetch!(dumper, field)
-
-      dumped_value =
-        if(
-          type in ignored_ecto_types(),
-          do: value,
-          else: dump_field!(schema, field, type, value, adapter, options)
-        )
-
-      {alias, dumped_value}
-    end
+  @spec dump_field!({atom, any}, module, module, options, String.t()) :: {atom, any}
+  defp dump_field!({field, %Ecto.Changeset{} = value}, _schema, _adapter, options, event) do
+    {field, serialize(value, options, event)}
   end
 
-  @spec dump_field!(module, atom, atom, any, module, options) :: any
-  defp dump_field!(_schema, _field, _type, %Ecto.Changeset{} = value, _adapter, options) do
-    serialize_changes(value, options)
+  defp dump_field!({field, value}, schema, adapter, _options, _event) do
+    dumper = schema.__schema__(:dump)
+    {alias, type} = Map.fetch!(dumper, field)
+
+    dumped_value =
+      if(
+        type in ignored_ecto_types(),
+        do: value,
+        else: do_dump_field!(schema, field, type, value, adapter)
+      )
+
+    {alias, dumped_value}
   end
 
-  defp dump_field!(schema, field, type, value, adapter, _options) do
+  @spec do_dump_field!(module, atom, atom, any, module) :: any
+  defp do_dump_field!(schema, field, type, value, adapter) do
     case Ecto.Type.adapter_dump(adapter, type, value) do
       {:ok, value} ->
         value
@@ -165,13 +193,6 @@ defmodule PaperTrail.Serializer do
               "value `#{inspect(value)}` for `#{inspect(schema)}.#{field}` " <>
                 "does not match type #{inspect(type)}"
     end
-  end
-
-  def serialize_changes(%Ecto.Changeset{data: %schema{}, changes: changes}, options) do
-    changes
-    |> schema.__struct__()
-    |> serialize(options)
-    |> Map.take(Map.keys(changes))
   end
 
   def add_prefix(changeset, nil), do: changeset
