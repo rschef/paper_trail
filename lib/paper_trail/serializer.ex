@@ -130,12 +130,12 @@ defmodule PaperTrail.Serializer do
     changes = model |> Map.from_struct() |> Map.take(fields)
 
     schema
-    |> dump_fields!(changes, dumper, adapter)
+    |> dump_fields!(changes, dumper, adapter, options)
     |> Map.new()
   end
 
-  @spec dump_fields!(module, map, module, module) :: Keyword.t()
-  defp dump_fields!(schema, changes, dumper, adapter) do
+  @spec dump_fields!(module, map, module, module, options) :: Keyword.t()
+  defp dump_fields!(schema, changes, dumper, adapter, options) do
     for {field, value} <- changes do
       {alias, type} = Map.fetch!(dumper, field)
 
@@ -143,15 +143,19 @@ defmodule PaperTrail.Serializer do
         if(
           type in ignored_ecto_types(),
           do: value,
-          else: dump_field!(schema, field, type, value, adapter)
+          else: dump_field!(schema, field, type, value, adapter, options)
         )
 
       {alias, dumped_value}
     end
   end
 
-  @spec dump_field!(module, atom, atom, any, module) :: any
-  defp dump_field!(schema, field, type, value, adapter) do
+  @spec dump_field!(module, atom, atom, any, module, options) :: any
+  defp dump_field!(_schema, _field, _type, %Ecto.Changeset{} = value, _adapter, options) do
+    serialize_changes(value, options)
+  end
+
+  defp dump_field!(schema, field, type, value, adapter, _options) do
     case Ecto.Type.adapter_dump(adapter, type, value) do
       {:ok, value} ->
         value

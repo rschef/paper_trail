@@ -62,7 +62,8 @@ defmodule PaperTrailTest.SimpleModeBangFunctions do
              facebook: nil,
              twitter: nil,
              founded_in: nil,
-             location: nil
+             location: nil,
+             email_options: nil
            }
 
     assert Map.drop(version, [:id, :inserted_at]) == %{
@@ -113,7 +114,8 @@ defmodule PaperTrailTest.SimpleModeBangFunctions do
              facebook: "acme.llc",
              twitter: nil,
              founded_in: nil,
-             location: nil
+             location: nil,
+             email_options: nil
            }
 
     assert Map.drop(version, [:id, :inserted_at]) == %{
@@ -163,7 +165,8 @@ defmodule PaperTrailTest.SimpleModeBangFunctions do
              facebook: "acme.llc",
              twitter: nil,
              founded_in: nil,
-             location: nil
+             location: nil,
+             email_options: nil
            }
 
     assert Map.drop(version, [:id, :inserted_at]) == %{
@@ -222,7 +225,8 @@ defmodule PaperTrailTest.SimpleModeBangFunctions do
              facebook: "acme.llc",
              twitter: nil,
              founded_in: nil,
-             location: nil
+             location: nil,
+             email_options: nil
            }
 
     assert Map.drop(version, [:id, :inserted_at]) == %{
@@ -242,7 +246,8 @@ defmodule PaperTrailTest.SimpleModeBangFunctions do
                  facebook: "acme.llc",
                  twitter: nil,
                  founded_in: nil,
-                 location: nil
+                 location: nil,
+                 email_options: nil
                }),
              originator_id: user.id,
              origin: nil,
@@ -491,7 +496,8 @@ defmodule PaperTrailTest.SimpleModeBangFunctions do
              facebook: nil,
              twitter: nil,
              founded_in: nil,
-             location: nil
+             location: nil,
+             email_options: nil
            }
 
     assert Map.drop(version, [:id, :inserted_at]) == %{
@@ -548,7 +554,8 @@ defmodule PaperTrailTest.SimpleModeBangFunctions do
              facebook: "acme.llc",
              twitter: nil,
              founded_in: nil,
-             location: nil
+             location: nil,
+             email_options: nil
            }
 
     assert Map.drop(version, [:id, :inserted_at]) == %{
@@ -605,7 +612,8 @@ defmodule PaperTrailTest.SimpleModeBangFunctions do
              facebook: "acme.llc",
              twitter: nil,
              founded_in: nil,
-             location: nil
+             location: nil,
+             email_options: nil
            }
 
     assert Map.drop(version, [:id, :inserted_at]) == %{
@@ -674,7 +682,8 @@ defmodule PaperTrailTest.SimpleModeBangFunctions do
              facebook: "acme.llc",
              twitter: nil,
              founded_in: nil,
-             location: nil
+             location: nil,
+             email_options: nil
            }
 
     assert Map.drop(version, [:id, :inserted_at]) == %{
@@ -694,7 +703,8 @@ defmodule PaperTrailTest.SimpleModeBangFunctions do
                  facebook: "acme.llc",
                  twitter: nil,
                  founded_in: nil,
-                 location: nil
+                 location: nil,
+                 email_options: nil
                }),
              originator_id: user.id,
              origin: nil,
