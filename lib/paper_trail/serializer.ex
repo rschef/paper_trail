@@ -117,10 +117,18 @@ defmodule PaperTrail.Serializer do
     |> List.first()
   end
 
-  @spec serialize(nil | Ecto.Changeset.t() | struct, options, String.t()) :: nil | map
+  @spec serialize(
+          nil | Ecto.Changeset.t() | struct() | [Ecto.Changeset.t() | struct()],
+          options(),
+          String.t()
+        ) :: nil | map() | [map()]
   def serialize(model, options, event \\ "insert")
 
   def serialize(nil, _options, _event), do: nil
+
+  def serialize(list, options, event) when is_list(list) do
+    Enum.map(list, &serialize(&1, options, event))
+  end
 
   def serialize(
         %Ecto.Changeset{data: %schema{}, changes: changes},
