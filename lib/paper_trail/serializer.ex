@@ -155,6 +155,7 @@ defmodule PaperTrail.Serializer do
     associations = serialize_associations(model, options, event)
 
     changes
+    |> Map.take(schema.__schema__(:fields))
     |> Enum.map(&dump_field!(&1, schema, adapter, options, event))
     |> Map.new()
     |> Map.merge(associations)
