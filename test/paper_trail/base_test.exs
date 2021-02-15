@@ -167,6 +167,29 @@ defmodule PaperTrailTest do
     assert company == first(Company, :id) |> @repo.one |> serialize
   end
 
+  test "do not create version if there're no changes" do
+    {:ok, insert_result} = create_company_with_version()
+
+    {:ok, result} =
+      update_company_with_version(
+        insert_result[:model],
+        %{}
+      )
+
+    company_count = Company.count()
+    version_count = Version.count()
+
+    company = result[:model] |> serialize
+    version = result[:version]
+
+    assert Map.keys(result) == [:model, :version]
+    assert company_count == 1
+    assert version_count == 1
+
+    assert company == insert_result[:model] |> serialize
+    assert version == nil
+  end
+
   test "updating a company with originator[user] creates a correct company version" do
     user = create_user()
     {:ok, insert_result} = create_company_with_version()

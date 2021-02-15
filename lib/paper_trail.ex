@@ -1,6 +1,7 @@
 defmodule PaperTrail do
   import Ecto.Changeset
 
+  alias Ecto.Changeset
   alias PaperTrail.Multi
   alias PaperTrail.RepoClient
   alias PaperTrail.Serializer
@@ -32,16 +33,16 @@ defmodule PaperTrail do
               returning: boolean()
             ]
 
-  @type result :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
+  @type result :: {:ok, Ecto.Schema.t()} | {:error, Changeset.t()}
   @type all_result :: {integer, nil | [any]}
 
-  @callback insert(Ecto.Changeset.t(), options) :: result
-  @callback insert!(Ecto.Changeset.t(), options) :: Ecto.Schema.t()
-  @callback update(Ecto.Changeset.t(), options) :: result
-  @callback update!(Ecto.Changeset.t(), options) :: Ecto.Schema.t()
+  @callback insert(Changeset.t(), options) :: result
+  @callback insert!(Changeset.t(), options) :: Ecto.Schema.t()
+  @callback update(Changeset.t(), options) :: result
+  @callback update!(Changeset.t(), options) :: Ecto.Schema.t()
   @callback update_all(queryable, updates, options) :: all_result
-  @callback delete(Ecto.Changeset.t(), options) :: result
-  @callback delete!(Ecto.Changeset.t(), options) :: Ecto.Schema.t()
+  @callback delete(Changeset.t(), options) :: result
+  @callback delete!(Changeset.t(), options) :: Ecto.Schema.t()
 
   @callback get_version(Ecto.Schema.t()) :: Ecto.Query.t()
   @callback get_version(module, any) :: Ecto.Query.t()
@@ -172,7 +173,7 @@ defmodule PaperTrail do
   @doc """
   Inserts a record to the database with a related version insertion in one transaction
   """
-  @spec insert(Ecto.Changeset.t(), options) :: result
+  @spec insert(Changeset.t(), options) :: result
   def insert(changeset, options \\ []) do
     Multi.new()
     |> Multi.insert(changeset, options)
@@ -230,7 +231,7 @@ defmodule PaperTrail do
   @doc """
   Updates a record from the database with a related version insertion in one transaction
   """
-  @spec update(Ecto.Changeset.t(), options) :: result
+  @spec update(Changeset.t(), options) :: result
   def update(changeset, options \\ []) do
     Multi.new()
     |> Multi.update(changeset, options)
@@ -292,7 +293,7 @@ defmodule PaperTrail do
   @doc """
   Deletes a record from the database with a related version insertion in one transaction
   """
-  @spec delete(Ecto.Changeset.t(), options) :: result
+  @spec delete(Changeset.t(), options) :: result
   def delete(struct, options \\ []) do
     Multi.new()
     |> Multi.delete(struct, options)
