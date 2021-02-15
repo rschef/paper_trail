@@ -1,17 +1,18 @@
 defmodule PaperTrail.Multi do
   import Ecto.Changeset
 
+  alias Ecto.Changeset
   alias PaperTrail
   alias PaperTrail.Version
   alias PaperTrail.RepoClient
   alias PaperTrail.Serializer
 
   @type multi :: Ecto.Multi.t()
-  @type changeset :: Ecto.Changeset.t()
+  @type changeset :: Changeset.t()
   @type options :: PaperTrail.options()
   @type queryable :: PaperTrail.queryable()
   @type updates :: PaperTrail.updates()
-  @type struct_or_changeset :: Ecto.Schema.t() | Ecto.Changeset.t()
+  @type struct_or_changeset :: Ecto.Schema.t() | Changeset.t()
   @type result ::
           {:ok, any()}
           | {:error, any()}
@@ -133,7 +134,12 @@ defmodule PaperTrail.Multi do
         |> Ecto.Multi.update(model_key, changeset)
         |> Ecto.Multi.run(version_key, fn repo, _changes ->
           version = make_version_struct(%{event: "update"}, changeset, options)
-          repo.insert(version)
+
+          if changeset.changes == %{} do
+            {:ok, nil}
+          else
+            repo.insert(version)
+          end
         end)
     end
   end
