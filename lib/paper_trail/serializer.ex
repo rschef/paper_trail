@@ -184,7 +184,7 @@ defmodule PaperTrail.Serializer do
     dumped_value =
       if(
         type in ignored_ecto_types(),
-        do: value,
+        do: serialize_binary(value),
         else: do_dump_field!(schema, field, type, value, adapter)
       )
 
@@ -234,4 +234,15 @@ defmodule PaperTrail.Serializer do
 
   @spec get_env(atom, any) :: any
   defp get_env(key, default), do: Application.get_env(:paper_trail, key, default)
+
+  @spec serialize_binary(binary()) :: String.t() | [integer()]
+  defp serialize_binary(binary) when is_binary(binary) do
+    if String.valid?(binary) do
+      binary
+    else
+      :binary.bin_to_list(binary)
+    end
+  end
+
+  defp serialize_binary(value), do: value
 end
