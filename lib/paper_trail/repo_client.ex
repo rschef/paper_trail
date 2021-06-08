@@ -13,6 +13,9 @@ defmodule PaperTrail.RepoClient do
   @spec originator :: PaperTrail.originator()
   def originator, do: Application.get_env(:paper_trail, :originator, nil)
 
+  @spec originator_type :: atom()
+  def originator_type, do: Application.get_env(:paper_trail, :originator_type, :integer)
+
   @spec strict_mode(PaperTrail.options()) :: PaperTrail.strict_mode()
   def strict_mode(options \\ []) do
     case Keyword.get(options, :strict_mode) do
